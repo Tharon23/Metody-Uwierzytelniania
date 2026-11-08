@@ -1,0 +1,17 @@
+# Materiały zza paywalla / kopie lokalne (prawa autorskie — NIE publikować)
+zrodla/lokalne/
+*.local.pdf
+
+# Robocze
+*.tmp
+~$*
+.DS_Store
+Thumbs.db
+
+# Narzędzia wizualizacji (gdy dojdzie moduł web)
+node_modules/
+dist/
+.next/
+.vercel/
+.env
+.env.local
