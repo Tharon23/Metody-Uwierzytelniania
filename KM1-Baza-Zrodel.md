@@ -3,8 +3,7 @@
 **Projekt:** Analiza porównawcza mechanizmów uwierzytelniania
 **Przedmiot:** Bezpieczne Transakcje Elektroniczne
 **Zespół:** Kamil Szkarłat (koordynator), Jakub Szkaradek, Bartłomiej Ząbek, Radosław Chruściński, Wojciech Śliwa, Mikołaj Mierzwa
-**Kamień milowy:** KM1 (08.11) — zatwierdzenie bazy źródłowej, założeń oraz szczegółowego planu projektu
-**Status dokumentu:** wersja do konsultacji z prowadzącym
+**Kamień milowy:** KM1 (08.11) — baza źródłowa, założenia oraz szczegółowy plan projektu
 
 ---
 
@@ -31,7 +30,7 @@ Każde źródło opisano: **[typ] • rok • relevancja** oraz przypisano do za
 |---|--------|-----|------------------|
 | N1 | **NIST SP 800-63B-4 — Digital Identity Guidelines: Authentication & Authenticator Management** (wersja finalna, lipiec 2025) — [PDF](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-63B-4.pdf) · [HTML](https://pages.nist.gov/800-63-4/sp800-63b.html) · [strona NIST](https://csrc.nist.gov/pubs/sp/800/63/b/4/final) | norma | Definiuje **poziomy pewności uwierzytelnienia AAL1–AAL3** i kryterium „phishing-resistant". Rdzeń naszej osi „zgodność/bezpieczeństwo". SMS klasyfikowany jako *restricted*. |
 | N2 | **NIST SP 800-63-4 (pakiet: -63, -63A, -63B, -63C)** — [strona NIST](https://csrc.nist.gov/pubs/sp/800/63/4/final) | norma | Kontekst całej rodziny: identity proofing, federacja, zarządzanie cyklem życia. |
-| N3 | **PSD2 — Dyrektywa (UE) 2015/2366** + **Rozporządzenie delegowane (UE) 2018/389 (RTS SCA)** — [EUR-Lex 2018/389](https://eur-lex.europa.eu/eli/reg_del/2018/389/oj) · [Opinia EBA nt. elementów SCA, 06.2019 (omówienie)](https://www.simmons-simmons.com/publications/ck0ahotug6qoc0b949t9vuitz/eba-publishes-opinion-on-the-elements-of-strong-customer-authentication-under-psd2) | norma | **Silne Uwierzytelnianie Klienta (SCA)** = ≥2 niezależne elementy z 3 kategorii (wiedza / posiadanie / cecha). Kluczowe dla kontekstu transakcji elektronicznych i relacji B2C/B2B. Obowiązuje od 14.09.2019. EBA: EMV 3-D Secure *nie* liczy się jako „inherence". **Aktualizacja:** PSD2 zostanie zastąpione pakietem **PSD3 + PSR** (projekt KE z 06.2023; wstępne porozumienie polityczne 27.11.2025, teksty kompromisowe ~04.2026) — SCA utrzymane i wzmocnione (adaptacyjne, risk-based; biometria behawioralna dozwolona). |
+| N3 | **PSD2 — Dyrektywa (UE) 2015/2366** + **Rozporządzenie delegowane (UE) 2018/389 (RTS SCA)** — [EUR-Lex 2018/389](https://eur-lex.europa.eu/eli/reg_del/2018/389/oj) · [Opinia EBA nt. elementów SCA, 06.2019 (omówienie)](https://www.simmons-simmons.com/publications/ck0ahotug6qoc0b949t9vuitz/eba-publishes-opinion-on-the-elements-of-strong-customer-authentication-under-psd2) | norma | **Silne Uwierzytelnianie Klienta (SCA)** = ≥2 niezależne elementy z 3 kategorii (wiedza / posiadanie / cecha). Kluczowe dla kontekstu transakcji elektronicznych i relacji B2C/B2B. Obowiązuje od 14.09.2019. EMV 3-D Secure nie liczy się jako „inherence". PSD2 jest zastępowane pakietem **PSD3 + PSR**, w którym SCA zostaje utrzymane i wzmocnione (adaptacyjne, risk-based). |
 | N4 | **OWASP Multifactor Authentication Cheat Sheet** — [link](https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html) oraz **Authentication Cheat Sheet** — [link](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html) | norma | Praktyczne wytyczne: dwa składniki tego samego typu ≠ MFA; passkeys łączą posiadanie + wiedza/cecha; risk-based MFA. Baza do zadania D (rekomendacje). |
 | N5 | **OWASP Top 10 (2021) — A07: Identification and Authentication Failures** — [link](https://cheatsheetseries.owasp.org/IndexTopTen.html) | norma | Mapuje typowe błędy uwierzytelniania na ryzyka aplikacyjne. |
 | N6 | **ISO/IEC 27001 / 27002** (zarządzanie bezpieczeństwem informacji), **ISO/IEC 29115** (entity authentication assurance), **ISO/IEC 30107-1/-3** (Presentation Attack Detection) — [iso.org](https://www.iso.org/standard/27001) | norma | 30107 definiuje PAD — niezbędne przy ocenie biometrii (B2). 29115 = ramy poziomów pewności. |
@@ -58,10 +57,10 @@ Każde źródło opisano: **[typ] • rok • relevancja** oraz przypisano do za
 | # | Źródło | Typ | Dlaczego istotne |
 |---|--------|-----|------------------|
 | P1 | **Lyastani i in. — „Is FIDO2 the Kingslayer of User Authentication? A Comparative Usability Study of FIDO2 Passwordless Authentication"**, IEEE S&P 2020 — [PDF](https://trust.cispa.saarland/publication/lyastani-20-sp/lyastani-20-sp.pdf) | recenz. | **Najczęściej cytowane** porównawcze badanie użyteczności FIDO2. Punkt odniesienia dla osi UX. |
-| P2 | **„FIDO2 the Rescue? Platform vs. Roaming Authentication on Smartphones"**, **ACM CHI 2023** (DOI [10.1145/3544548.3580993](https://doi.org/10.1145/3544548.3580993)) — [arXiv PDF](https://arxiv.org/pdf/2302.07777) | recenz. | Porównanie uwierzytelniania platformowego (biometria w telefonie) vs. klucz roaming. **Recenzja potwierdzona: CHI 2023.** |
-| P3 | **„Challenges with Passwordless FIDO2 in an Enterprise Setting: A Usability Study"**, **IEEE SecDev 2023** — [arXiv HTML](https://arxiv.org/html/2308.08096v2) | recenz. | Badanie 118 profesjonalistów — bariery wdrożeniowe w B2B. Użytkownicy nie rozumieją przewagi „phishing-resistant" nad push. **Recenzja potwierdzona: IEEE SecDev 2023.** |
-| P4 | **Lassak i in. — „Why Aren't We Using Passkeys? Obstacles Companies Face…"**, USENIX Security 2024; oraz badanie SOUPS 2025 — [PDF SOUPS 2025](https://www.usenix.org/system/files/soups2025-lassak.pdf) | recenz. | Przeszkody adopcji passkeys; porównanie kluczy (PIN/biometria) vs. hasło+TOTP. **USENIX — open access.** |
-| P5 | **„Device-Bound vs. Synced Credentials: A Comparative Evaluation of Passkey Authentication"**, **ICISSP 2025** — [arXiv PDF](https://arxiv.org/pdf/2501.07380) | recenz. | Kluczowe rozróżnienie: passkey związany z urządzeniem vs. synchronizowany (B2C vs. B2B). **Recenzja potwierdzona: ICISSP 2025 (accepted).** |
+| P2 | **„FIDO2 the Rescue? Platform vs. Roaming Authentication on Smartphones"**, **ACM CHI 2023** (DOI [10.1145/3544548.3580993](https://doi.org/10.1145/3544548.3580993)) — [arXiv PDF](https://arxiv.org/pdf/2302.07777) | recenz. | Porównanie uwierzytelniania platformowego (biometria w telefonie) vs. klucz roaming. |
+| P3 | **„Challenges with Passwordless FIDO2 in an Enterprise Setting: A Usability Study"**, **IEEE SecDev 2023** — [arXiv HTML](https://arxiv.org/html/2308.08096v2) | recenz. | Badanie 118 profesjonalistów — bariery wdrożeniowe w B2B. Użytkownicy nie rozumieją przewagi „phishing-resistant" nad push. |
+| P4 | **Lassak i in. — „Why Aren't We Using Passkeys? Obstacles Companies Face…"**, USENIX Security 2024; oraz badanie SOUPS 2025 — [PDF SOUPS 2025](https://www.usenix.org/system/files/soups2025-lassak.pdf) | recenz. | Przeszkody adopcji passkeys; porównanie kluczy (PIN/biometria) vs. hasło+TOTP. |
+| P5 | **„Device-Bound vs. Synced Credentials: A Comparative Evaluation of Passkey Authentication"**, **ICISSP 2025** — [arXiv PDF](https://arxiv.org/pdf/2501.07380) | recenz. | Kluczowe rozróżnienie: passkey związany z urządzeniem vs. synchronizowany (B2C vs. B2B). |
 | P6 | **NCSC (UK) — „Comparing the security properties of traditional user credentials and FIDO2 credentials for personal use"** — [link](https://www.ncsc.gov.uk/paper/traditional-user-and-fido2-credentials-personal-use) | raport/recenz. | Gotowa tabela odporności (AitM phishing: „never vulnerable" dla FIDO2 vs. „always" dla hasła). Wzór pod naszą matrycę (C). |
 
 ### 4b. MFA / 2FA — kompromis bezpieczeństwo ↔ wygoda  `[→ B1, B3, C]`
@@ -69,17 +68,17 @@ Każde źródło opisano: **[typ] • rok • relevancja** oraz przypisano do za
 | # | Źródło | Typ | Dlaczego istotne |
 |---|--------|-----|------------------|
 | P7 | **Karim i in. — przegląd porównawczy metod MFA** (SMS, voice, FIDO2, biometria wg bezpieczeństwa/UX/kosztu/kompatybilności), *Int. J. of Data and Network Science*, 2023 — [PDF](https://www.growingscience.com/ijds/Vol8/ijdns_2023_180.pdf) | recenz. | **Najbliższe naszemu tematowi** istniejące porównanie wielokryterialne. Wzorzec metodyczny matrycy. |
-| P8 | **„A Comparative Usability Study of Two-Factor Authentication"**, **USEC 2014** (wersja wstępna) — [arXiv PDF](https://arxiv.org/pdf/1309.5344) | recenz. | Klasyczne źródło: użytkownicy przedkładają wygodę nad bezpieczeństwo; znajomość metody > postrzegana użyteczność. **Recenzja: USEC 2014.** |
-| P9 | **„Evaluating User Perception of Multi-Factor Authentication: A Systematic Review"** — [ResearchGate](https://www.researchgate.net/publication/335233025_Evaluating_User_Perception_of_Multi-Factor_Authentication_A_Systematic_Review) | preprint | Przegląd systematyczny percepcji MFA; obowiązkowe MFA bez edukacji bywa nieskuteczne. *Link RG blokuje boty — otwierać w przeglądarce; status recenzji do potwierdzenia.* |
+| P8 | **„A Comparative Usability Study of Two-Factor Authentication"**, **USEC 2014** (wersja wstępna) — [arXiv PDF](https://arxiv.org/pdf/1309.5344) | recenz. | Klasyczne źródło: użytkownicy przedkładają wygodę nad bezpieczeństwo; znajomość metody > postrzegana użyteczność. |
+| P9 | **„Evaluating User Perception of Multi-Factor Authentication: A Systematic Review"** — [ResearchGate](https://www.researchgate.net/publication/335233025_Evaluating_User_Perception_of_Multi-Factor_Authentication_A_Systematic_Review) | preprint | Przegląd systematyczny percepcji MFA; obowiązkowe MFA bez edukacji bywa nieskuteczne. |
 | P10 | **AuthGuide — „Analyzing Security, Privacy and Usability Trade-offs in MFA"**, KU Leuven — [PDF](https://lirias.kuleuven.be/server/api/core/bitstreams/6c5421d7-dd23-4403-906d-59bf0eac3b8e/content) | recenz. | Trójosiowy kompromis bezpieczeństwo/prywatność/UX — bezpośrednio wspiera naszą oś oceny. |
-| P11 | **Amft i in. — „We've Disabled MFA for You: An Evaluation of the Security and Usability of MFA Recovery Deployments"**, arXiv 2306.09708 — [PDF](https://arxiv.org/pdf/2306.09708) | preprint | Odzyskiwanie konta (security questions, kody zapasowe) osłabia nawet passwordless — ważne dla D. *Grupa Acar/Fahl; miejsce publikacji do potwierdzenia.* |
-| P12 | **Lyastani i in. — „A Systematic Study of the Consistency of 2FA User Journeys on Top-Ranked Websites" (Extended Version)**, arXiv 2210.09373 — [PDF](https://arxiv.org/pdf/2210.09373) | preprint | Jak realne serwisy wdrażają 2FA — materiał do B3 (praktyka B2C). *Wersja rozszerzona pracy konferencyjnej; miejsce do potwierdzenia.* |
+| P11 | **Amft i in. — „We've Disabled MFA for You: An Evaluation of the Security and Usability of MFA Recovery Deployments"**, arXiv 2306.09708 — [PDF](https://arxiv.org/pdf/2306.09708) | preprint | Odzyskiwanie konta (security questions, kody zapasowe) osłabia nawet passwordless — ważne dla D. |
+| P12 | **Lyastani i in. — „A Systematic Study of the Consistency of 2FA User Journeys on Top-Ranked Websites" (Extended Version)**, arXiv 2210.09373 — [PDF](https://arxiv.org/pdf/2210.09373) | preprint | Jak realne serwisy wdrażają 2FA — materiał do B3 (praktyka B2C). |
 
 ### 4c. Biometria i Presentation Attack Detection  `[→ B2, C]`
 
 | # | Źródło | Typ | Dlaczego istotne |
 |---|--------|-----|------------------|
-| P13 | **„Audio-Visual Biometric Recognition and Presentation Attack Detection: A Comprehensive Survey"**, **IEEE Access, vol. 9, s. 37431–37455, 2021** — [arXiv PDF](https://arxiv.org/pdf/2101.09725) | recenz. | Szeroki przegląd modalności biometrycznych + ataki prezentacji (replay/spoofing). **Recenzja potwierdzona: IEEE Access 2021.** |
+| P13 | **„Audio-Visual Biometric Recognition and Presentation Attack Detection: A Comprehensive Survey"**, **IEEE Access, vol. 9, s. 37431–37455, 2021** — [arXiv PDF](https://arxiv.org/pdf/2101.09725) | recenz. | Szeroki przegląd modalności biometrycznych + ataki prezentacji (replay/spoofing). |
 | P14 | **„A comprehensive survey of fingerprint presentation attack detection"**, *J. Surveill. Secur. Saf.* — [link](https://www.oaepublish.com/articles/jsss.2021.07) | recenz. | Metody hardware/software wykrywania spoofingu odcisku palca. |
 | P15 | **Marasco i in. — „Biometric multi-factor authentication: on the usability of the FingerPIN scheme"**, *Security and Privacy* (Wiley), 2023 — [link](https://onlinelibrary.wiley.com/doi/full/10.1002/spy2.261) | recenz. | Badanie UX hybrydy biometria+PIN (100 uczestników) — balans bezpieczeństwo/UX. |
 | P16 | **„Presentation attack detection and biometric recognition in a challenge-response formalism"**, *EURASIP J. Information Security*, 2022 — [link](https://jis-eurasipjournals.springeropen.com/articles/10.1186/s13635-022-00131-y) | recenz. | Challenge-response jako obrona przed atakami prezentacji (freshness). |
@@ -94,10 +93,10 @@ Każde źródło opisano: **[typ] • rok • relevancja** oraz przypisano do za
 | A2 | **MFA Fatigue / Push Bombing — włamanie do Uber (wrzesień 2022, Lapsus$)** — [BleepingComputer](https://www.bleepingcomputer.com/news/security/mfa-fatigue-attacks-are-putting-your-organization-at-risk/) | raport | Sztandarowe studium przypadku ataku zmęczeniowego na push. Obrona: **number matching**. Idealne do prezentacji dla licealistów. |
 | A3 | **DEKRA — „From SMS to SIM: Security Analysis of Phone Number Verification"** — [link](https://dekra.com/en/security-analysis-of-phone-number-verification) | raport | Analiza słabości SMS-OTP: phishing, **SIM-swap**, SS7, złośliwe aplikacje. Argument „dlaczego SMS = restricted". |
 | A4 | **Basin i in. — „The EMV Standard: Break, Fix, Verify" / PIN bypass kart zbliżeniowych** — [omówienie](https://www.bankinfosecurity.com/emv-credit-card-flaw-allows-pin-bypass-a-14956) | recenz. | Formalna analiza EMV; atak obejścia PIN (Visa). Dla zakresu „karty zbliżeniowe". |
-| A5 | **„Practical EMV Relay Protection"**, IEEE S&P 2022 — [IEEE](https://ieeexplore.ieee.org/document/9833642/) · **„Security Analysis and Implementation of Relay-Resistant Contactless Payments"**, ACM CCS 2020 — [ACM](https://dl.acm.org/doi/10.1145/3372297.3417235) | recenz. | Ataki **relay** na płatności zbliżeniowe (m.in. obejście blokady Apple Pay); protokoły distance-bounding jako obrona (D). *IEEE/ACM — dostęp uczelniany; otwierać w przeglądarce.* |
+| A5 | **„Practical EMV Relay Protection"**, IEEE S&P 2022 — [IEEE](https://ieeexplore.ieee.org/document/9833642/) · **„Security Analysis and Implementation of Relay-Resistant Contactless Payments"**, ACM CCS 2020 — [ACM](https://dl.acm.org/doi/10.1145/3372297.3417235) | recenz. | Ataki **relay** na płatności zbliżeniowe (m.in. obejście blokady Apple Pay); protokoły distance-bounding jako obrona. |
 | A6 | **Hofmeier, Basin i in. — „SoK: Attacks on Modern Card Payments"**, arXiv 2504.03363 (04.2025) — [PDF](https://arxiv.org/pdf/2504.03363) | preprint | **Najświeższa** systematyzacja ataków na karty płatnicze; większość kart EMV wciąż ma podatny na klonowanie pasek magnetyczny. Rdzeń dla mechanizmu „karty zbliżeniowe/magnetyczne". |
-| A7 | **Scaife i in. — „Fear the Reaper: Characterization and Fast Detection of Card Skimmers"**, USENIX Security 2018 — [PDF](https://www.usenix.org/system/files/conference/usenixsecurity18/sec18-scaife.pdf) | recenz. | **Skimming** paska magnetycznego; detektor Skim Reaper. EMV ma pasek jako backup — nadal klonowalny. **USENIX open access.** |
-| A8 | **Roland, Langer — „Cloning Credit Cards: A Combined Pre-play and Downgrade Attack on EMV Contactless"**, USENIX WOOT 2013 — [PDF](https://www.usenix.org/system/files/conference/woot13/woot13-roland.pdf) | recenz. | Klonowanie przez skimming zbliżeniowy + wymuszenie trybu magstripe. **USENIX open access.** |
+| A7 | **Scaife i in. — „Fear the Reaper: Characterization and Fast Detection of Card Skimmers"**, USENIX Security 2018 — [PDF](https://www.usenix.org/system/files/conference/usenixsecurity18/sec18-scaife.pdf) | recenz. | **Skimming** paska magnetycznego; detektor Skim Reaper. EMV ma pasek jako backup — nadal klonowalny. |
+| A8 | **Roland, Langer — „Cloning Credit Cards: A Combined Pre-play and Downgrade Attack on EMV Contactless"**, USENIX WOOT 2013 — [PDF](https://www.usenix.org/system/files/conference/woot13/woot13-roland.pdf) | recenz. | Klonowanie przez skimming zbliżeniowy + wymuszenie trybu magstripe. |
 | A9 | **„Security Analysis of Near-Field Communication (NFC) Payments"**, arXiv 1904.10623 — [PDF](https://arxiv.org/pdf/1904.10623) | preprint | Pasek magnetyczny daje minimalne bezpieczeństwo (oparte na fizycznym posiadaniu); PoC przepisania danych track. |
 
 ---
@@ -186,19 +185,4 @@ Każdy mechanizm oceniany w skali **1–5** (1 = najsłabszy, 5 = najlepszy) w w
 
 ---
 
-## 9. Status weryfikacji i luki do uzupełnienia przed KM2
-
-**Zweryfikowano (08.11):**
-- ✅ Wszystkie linki sprawdzone (status HTTP). Działają. Zwrot `403`/`202` z iso.org, w3.org, researchgate, wiley, acm, ieee to **blokada botów/kolejka — strony otwierają się normalnie w przeglądarce**.
-- ✅ Status recenzji ustalony: **recenzowane** — P2 (CHI 2023), P3 (IEEE SecDev 2023), P5 (ICISSP 2025), P8 (USEC 2014), P13 (IEEE Access 2021), P1/P4/P7/P10/P14–P16/A1/A4/A5/A7/A8. **Preprint (miejsce do potwierdzenia)** — P9, P11, P12, A6, A9.
-- ✅ Karty magnetyczne/zbliżeniowe domknięte (A6–A9).
-- ✅ Status PSD3/PSR wyjaśniony (zob. N3).
-
-**Pozostałe luki:**
-- [ ] Dotrzeć do pełnych tekstów zza paywalla (A4, A5, P14, P15 — IEEE/ACM/Wiley/Springer) przez **dostęp uczelniany** (lista w README, sekcja „Do pobrania ręcznie").
-- [ ] Potwierdzić miejsce publikacji P9, P11, P12 (prawdopodobnie NDSS/USEC — sprawdzić w bibliotekach cyfrowych).
-- [ ] Zlokalizować lub odtworzyć repozytorium wzorca wizualnego (W1).
-
----
-
-*Dokument roboczy zespołu — do zatwierdzenia przez prowadzącego (KM1). Linki weryfikowane 08.11; przy cytowaniu w raporcie końcowym stosować pełny opis bibliograficzny (autor, tytuł, wydawca/konferencja, rok, DOI/URL, data dostępu).*
+*Przy cytowaniu w raporcie końcowym stosować pełny opis bibliograficzny: autor, tytuł, wydawca/konferencja, rok, DOI/URL.*
