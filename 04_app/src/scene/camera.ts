@@ -1,8 +1,8 @@
 import type { Actor } from '@content/types';
-import { easeOutExpo, seg } from '../engine/easing';
-import { stepParticipants, type Cursor, type Timeline } from '../engine/timeline';
+import { seg, smoother } from '../engine/easing';
+import { openingActor, stepParticipants, type Cursor, type Timeline } from '../engine/timeline';
 import { DEVICE_META } from './devices/Device';
-import { fitAspect, iso, lerpBox, type Box } from './iso';
+import { fitAspect, iso, lerpBox, lerpCam, type Box } from './iso';
 
 /** Prostokąt obejmujący urządzenie, etykietę i żetony. */
 function actorBox(a: Actor): Box {
@@ -23,8 +23,22 @@ function pad(b: Box, k: number): Box {
   return { x: b.x - b.w * k, y: b.y - b.h * k, w: b.w * (1 + 2 * k), h: b.h * (1 + 2 * k) };
 }
 
+/** Kadr o szerokości co najmniej minW, wyśrodkowany na b. */
+function atLeast(b: Box, minW: number, aspect: number): Box {
+  if (b.w >= minW) return b;
+  const cx = b.x + b.w / 2;
+  const cy = b.y + b.h / 2;
+  return fitAspect({ x: cx - minW / 2, y: cy - minW / aspect / 2, w: minW, h: minW / aspect }, aspect);
+}
+
 export function overview(actors: Actor[], aspect: number): Box {
   return fitAspect(pad(union(actors.map(actorBox)), 0.03), aspect);
+}
+
+/** Ujęcie otwierające: zbliżenie na pierwsze urządzenie (około trzykrotne). */
+export function openingShot(tl: Timeline, aspect: number): Box {
+  const all = overview(tl.actors, aspect);
+  return atLeast(fitAspect(pad(actorBox(openingActor(tl)), 0.12), aspect), all.w * 0.34, aspect);
 }
 
 function stepTarget(tl: Timeline, i: number, aspect: number, all: Box): Box {
@@ -34,21 +48,32 @@ function stepTarget(tl: Timeline, i: number, aspect: number, all: Box): Box {
   if (focus.length === 0) return all;
   const f = fitAspect(pad(union(focus.map(actorBox)), 0.18), aspect);
   // Kamera zbliża się, ale zostawia kontekst: nie mniej niż 72% szerokości planu ogólnego.
-  const minW = all.w * 0.72;
-  const z = f.w < minW ? fitAspect({ x: f.x + f.w / 2 - minW / 2, y: f.y + f.h / 2 - minW / aspect / 2, w: minW, h: minW / aspect }, aspect) : f;
-  return lerpBox(all, z, 0.6);
+  return lerpBox(all, atLeast(f, all.w * 0.72, aspect), 0.6);
 }
 
-/** Kadr kamery w chwili cur. Dojazd w pierwszych 30% kroku; po ostatnim kroku powrót do planu ogólnego. */
+/** Odjazd z ujęcia otwierającego: trzymamy zbliżenie, potem płynnie odsłaniamy cały plan. */
+export const OPENING_HOLD = 0.7;
+export const OPENING_END = 3.0;
+/** Udział kroku, w którym kamera przejeżdża do nowego kadru. */
+const MOVE_SHARE = 0.5;
+/** Powrót do planu ogólnego po ostatnim kroku (s). */
+const OUTRO_S = 2.0;
+
+/**
+ * Kadr kamery w chwili cur — czysta funkcja czasu (ta sama w aplikacji, pokazie i wideo).
+ * Każdy przejazd zaczyna się i kończy z zerową prędkością (smootherstep), więc na granicach
+ * kroków nie ma szarpnięć; zbliżenie zmienia się logarytmicznie (stałe odczucie tempa).
+ */
 export function cameraAt(tl: Timeline, cur: Cursor, aspect: number, reduced = false): Box {
   const all = overview(tl.actors, aspect);
-  if (cur.index < 0) return all;
+  if (cur.index < 0) {
+    if (reduced) return all;
+    return lerpCam(openingShot(tl, aspect), all, smoother(seg(cur.t, OPENING_HOLD, OPENING_END)));
+  }
   const target = stepTarget(tl, cur.index, aspect, all);
   if (cur.t > tl.stepsEnd) {
-    const k = easeOutExpo(seg(cur.t - tl.stepsEnd, 0, 1.4));
-    return lerpBox(target, all, k);
+    return reduced ? all : lerpCam(target, all, smoother(seg(cur.t - tl.stepsEnd, 0, OUTRO_S)));
   }
   const prev = stepTarget(tl, cur.index - 1, aspect, all);
-  const k = reduced ? 1 : easeOutExpo(seg(cur.p, 0, 0.42));
-  return lerpBox(prev, target, k);
+  return lerpCam(prev, target, reduced ? 1 : smoother(seg(cur.p, 0, MOVE_SHARE)));
 }

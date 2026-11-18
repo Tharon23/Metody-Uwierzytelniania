@@ -51,7 +51,7 @@ export function Start({ onToggleTheme }: { onToggleTheme: () => void }) {
             </div>
           </div>
           <figure className="start-stage" ref={ref} aria-label="Podgląd: phishing przechwytuje hasło">
-            <IsoStage tl={hero} t={t} width={size.width} height={size.height} reduced={reduced} gpu />
+            <IsoStage tl={hero} t={t} width={size.width} height={size.height} reduced={reduced} live />
             <figcaption>Arkusz 1, wariant „Phishing AitM”: fałszywa strona przechwytuje hasło i sesję.</figcaption>
           </figure>
         </section>

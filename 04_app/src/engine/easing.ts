@@ -10,6 +10,11 @@ export const easeInOutCubic = (p: number) => (p < 0.5 ? 4 * p * p * p : 1 - Math
 export const easeOutCubic = (p: number) => 1 - Math.pow(1 - p, 3);
 export const easeOutQuart = (p: number) => 1 - Math.pow(1 - p, 4);
 export const easeInOutSine = (p: number) => -(Math.cos(Math.PI * p) - 1) / 2;
+/** Smootherstep (Perlin): zerowa prędkość i przyspieszenie na obu końcach — ruch kamery bez szarpnięć. */
+export const smoother = (p: number) => {
+  const x = clamp(p);
+  return x * x * x * (x * (x * 6 - 15) + 10);
+};
 export const easeOutBack = (p: number) => {
   const c1 = 1.4;
   const c3 = c1 + 1;

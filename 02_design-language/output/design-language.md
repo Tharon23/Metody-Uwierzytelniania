@@ -58,10 +58,15 @@ Tekst wyrównany do lewej. Arkusz zajmuje co najmniej 60% szerokości. `D` chowa
 ## Ruch
 
 - Wspólne tokeny (wnioski z design-extract, `design-extract-porownanie.md`): czasy 120/180/300/420 ms, przesuw wskaźników 550 ms; krzywe `--ease-out: cubic-bezier(0.16, 1, 0.3, 1)` (wejścia, dojazdy), `--ease-in: cubic-bezier(0.5, 0, 0.75, 0)` (wyjścia), `--ease-move: cubic-bezier(0.4, 0, 0.2, 1)` (przewijanie czasu). Te same krzywe liczy silnik sceny (`engine/easing.ts`), więc działają też w wideo.
-- Każda klatka sceny to czysta funkcja czasu. Krzywe: `easeInOutCubic` dla przelotu pakietu, sprężyna dla pojawiania się aktorów, krzywa wykładnicza dla kamery.
-- Przejścia między krokami: krok naprzód odtwarza krok, krok wstecz płynnie przewija czas (scena cofa się przez stany pośrednie), skok o wiele kroków przenika (140 ms wyjście, 300 ms wejście). Kamera to transformacja warstwy (kompozytor GPU), nie zmiana viewBox.
-- Rytm kroku (~2,4 s w autoplay): kamera dojeżdża (0–0,25), kreska połączenia się rysuje (0,1–0,35), pakiet leci (0,3–0,75), odbiór: pierścień fali + zmiana stanu aktora (0,75–1).
-- Kamera: płynny dojazd viewBoxem do aktywnych aktorów, nigdy szybciej niż 0,8 s na przejazd.
+- Każda klatka sceny to czysta funkcja czasu. Krzywe: `easeInOutCubic` dla przelotu pakietu, sprężyna dla pojawiania się aktorów, smootherstep (zerowa prędkość i przyspieszenie na obu końcach) dla kamery.
+- Tempo: krok o wadze 1 trwa 2,8 s / 0,6 ≈ 4,7 s (`PACE` w `engine/timeline.ts`); prędkości 0,5×, 1×, 1,5×, 2×. W pokazie krok trwa co najmniej tyle, ile czytanie podpisu (1,6 s + 1 s na 14 znaków).
+- Ujęcie otwierające (3,4 s): kamera zaczyna od zbliżenia na pierwsze urządzenie (tylko ono jest widoczne), trzyma je 0,7 s, potem odjeżdża do planu ogólnego (do 3,0 s); pozostali aktorzy, trasy i żetony pojawiają się, gdy wchodzą w kadr.
+- Przejścia między krokami: krok naprzód odtwarza krok, krok wstecz i skok o wiele kroków szybko przewijają czas przez stany pośrednie (420–1100 ms). Kamera to viewBox (zawsze ostry wektor); w aplikacji dojeżdża do kadru sprężyną krytycznie tłumioną (ω = 6,5), więc płynie także przy skokach, przewijaniu i zmianie rozmiaru. W wideo sprężyna jest wyłączona.
+- Rytm kroku: kamera przejeżdża w pierwszej połowie kroku, zbliżenie zmienia się logarytmicznie (stałe odczucie tempa), kreska połączenia się rysuje (0,06–0,34), pakiet leci (0,3–0,76), odbiór: pierścień fali + zmiana stanu aktora (0,72–1). Płynność pilnuje test `camera.test.ts` (próbkowanie 60 Hz, bez skoków prędkości).
+- Sekwencja: wiadomości opadają w czasie (zapytanie w prawo-w dół, odpowiedź w lewo-w dół — zygzak), grot obraca się do kąta strzałki, widoczne są tylko rozpoczęte kroki; nagłówek torów jest nieprzezroczysty, treść chowa się pod nim z wygaszeniem; po ostatnim kroku cały przebieg ściska się nad werdyktem.
+- Autoodtwarzanie explorera: domyślnie włączone; pauza, krok ręczny albo przewijanie je wyłącza. Pytanie „Jak myślisz?” czeka 30 s, ekran końca 20 s (werdykt) lub 10 s, potem następny arkusz w kolejności całej aplikacji.
+- Detale: kursor-kłódka (czerwona zamknięta, nad elementem klikalnym zielona otwarta), oddychające logo z zielonym znacznikiem na krawędzi, pieczątka werdyktu, podświetlanie uczestników kroku z listy, podpowiedź kroku nad osią czasu, licznik rankingu, „deszyfrowanie” nazwy mechanizmu w tabliczce.
+- Autoskalowanie: baza rem = min(0,833vw; 1,48vh), ograniczona do 10–18 px (1920×1080 = 16 px); wymiary układu w rem. Od 1280×800 do 1920×1080 żaden panel się nie przewija.
 - Atak: tor atakującego odchodzi od legalnego czerwoną kreską; wynik „zablokowano" = rysowany krzyżyk na pakiecie i krótkie, wygaszane drżenie (≤ 2 Hz), „udany atak" = przejęty żeton przelatuje do atakującego.
 - `prefers-reduced-motion`: przejścia zamieniane na przenikanie, kamera bez jazdy.
 - Ruch w chromie aplikacji (panele, menu) tylko w odpowiedzi na działanie użytkownika.

@@ -22,5 +22,6 @@ dist/
 # Wideo: render wyjściowy duży — trzymamy tylko wybrane pliki
 05_video/output/*.mp4
 !05_video/output/zwiastun.mp4
+!05_video/output/brag.mp4
 04_app/out/
 *.tsbuildinfo

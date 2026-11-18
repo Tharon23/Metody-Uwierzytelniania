@@ -53,7 +53,7 @@ npm run build      # statyczny build w 04_app/dist
 ```
 
 - `#/` — spis arkuszy · `#/m/<mechanizm>/<wariant>` — arkusz (klawisz `?` pokazuje skróty) · `#/porownanie` — matryca i ranking · `#/autoplay` — pokaz (`?kiosk` blokuje wygaszanie ekranu) · `#/o-projekcie` — źródła i podziękowania.
-- Wideo: `npm run video:teaser` / `npm run video:full` (Remotion, te same sceny co aplikacja).
+- Wideo: `npm run video:teaser` / `npm run video:full` (Remotion, te same sceny co aplikacja). Krótki klip zapowiadający (25 s): [`05_video/output/brag.mp4`](05_video/output/brag.mp4), opis do udostępnienia w [`brag-opis.md`](05_video/output/brag-opis.md); muzyka: Sascha Ende, ende.app (CC BY 4.0).
 - Raport: `npm run gen:report`, potem `latexmk -lualatex -outdir=output raport.tex` w `06_report/`.
 - Strona: https://tharon23.github.io/Metody-Uwierzytelniania/ — workflow `.github/workflows/pages.yml` po każdym pushu na `main` uruchamia testy, buduje aplikację i aktualizuje gałąź `gh-pages` (jednorazowo w ustawieniach: Settings → Pages → Deploy from a branch → `gh-pages`, `/ (root)`).
 

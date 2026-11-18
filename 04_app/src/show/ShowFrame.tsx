@@ -28,7 +28,7 @@ export function ShowFrame({ show, t, width, height, reduced = false }: { show: S
         {seg.kind === 'intro' && <Intro local={local} />}
         {seg.kind === 'card' && <Card mech={seg.mech} local={local} width={width} height={height} />}
         {seg.kind === 'flow' && <Flow seg={seg} local={local} width={width} height={height} reduced={reduced} />}
-        {seg.kind === 'finale' && <Finale local={local} />}
+        {seg.kind === 'finale' && <Finale local={local} dur={dur} />}
         {seg.kind === 'credits' && <Credits local={local} />}
       </div>
       {seg.kind !== 'intro' && seg.kind !== 'credits' && <Progress current={'mech' in seg ? seg.mech.id : null} />}
@@ -147,9 +147,9 @@ function Flow({ seg, local, width, height, reduced }: { seg: Extract<Segment, { 
   );
 }
 
-function Finale({ local }: { local: number }) {
+function Finale({ local, dur }: { local: number; dur: number }) {
   // Trzy profile po kolei; słupki płynnie przechodzą między profilami.
-  const per = 4.2;
+  const per = Math.max(4.2, (dur - 2.5) / profiles.length);
   const pos = clamp((local - 1) / per, 0, profiles.length - 1);
   const i0 = Math.floor(pos);
   const i1 = Math.min(profiles.length - 1, i0 + 1);
@@ -188,7 +188,7 @@ function Finale({ local }: { local: number }) {
 function Credits({ local }: { local: number }) {
   return (
     <div className="show-credits">
-      <Mark />
+      <Mark still />
       <h2 style={rise(local, 0.1)}>Jak się logujemy?</h2>
       <p style={rise(local, 0.3)}>Projekt zespołowy, Bezpieczne Transakcje Elektroniczne, AGH, 2026</p>
       <p style={rise(local, 0.5)}>Twórcy: {TEAM.map((p) => p.name).join(' · ')}</p>

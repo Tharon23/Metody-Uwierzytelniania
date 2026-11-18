@@ -68,6 +68,20 @@ export interface Box {
   h: number;
 }
 
+/**
+ * Przejście kadru ze stałym odczuciem zbliżenia: środek liniowo, szerokość logarytmicznie
+ * (przy liniowej szerokości odjazd wydaje się na początku szybszy niż przy końcu).
+ */
+export function lerpCam(a: Box, b: Box, k: number): Box {
+  if (k <= 0) return a;
+  if (k >= 1) return b;
+  const cx = a.x + a.w / 2 + (b.x + b.w / 2 - a.x - a.w / 2) * k;
+  const cy = a.y + a.h / 2 + (b.y + b.h / 2 - a.y - a.h / 2) * k;
+  const w = Math.exp(Math.log(a.w) + (Math.log(b.w) - Math.log(a.w)) * k);
+  const h = Math.exp(Math.log(a.h) + (Math.log(b.h) - Math.log(a.h)) * k);
+  return { x: cx - w / 2, y: cy - h / 2, w, h };
+}
+
 export const lerpBox = (a: Box, b: Box, k: number): Box => ({
   x: a.x + (b.x - a.x) * k,
   y: a.y + (b.y - a.y) * k,

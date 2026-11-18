@@ -1,8 +1,9 @@
 import { memo, useMemo } from 'react';
 import type { Actor, Channel, Step, Token, Tone } from '@content/types';
 import { clamp, decayShake, easeInOutCubic, easeOutCubic, easeOutQuart, seg, spring } from '../engine/easing';
-import { locate, stateBefore, STEP_SECONDS, type Timeline } from '../engine/timeline';
-import { cameraAt, overview } from './camera';
+import { appearAt, locate, stateBefore, STEP_SECONDS, type Timeline } from '../engine/timeline';
+import { cameraAt } from './camera';
+import { useFollowCamera } from './follow';
 import { Device, DEVICE_META } from './devices/Device';
 import { iso, pathD, pointAt, polyLength, route, type Grid, type P } from './iso';
 
@@ -34,10 +35,12 @@ interface Props {
   /** Pas u dołu (px), np. pod napisy w autoplay. */
   insetBottom?: number;
   /**
-   * Kamera jako warstwa kompozytora (transform + will-change w trakcie jazdy): płynniej w przeglądarce.
-   * Wyłączone w wideo, gdzie liczy się ostrość każdej klatki, nie koszt rysowania.
+   * Na żywo w przeglądarce: kamera dojeżdża do kadru sprężyną (płynie przy skokach i przewijaniu).
+   * Wyłączone w wideo, gdzie klatka musi być czystą funkcją czasu.
    */
-  gpu?: boolean;
+  live?: boolean;
+  /** Krok wskazany na liście: jego uczestnicy zostają wyraźni, reszta przygasa, trasa w podglądzie. */
+  spot?: Step | null;
 }
 
 function centroid(actors: Actor[]): Grid {
@@ -106,11 +109,12 @@ function Pill({ x, y, text, tone, badge, scale = 1, opacity = 1 }: { x: number; 
   );
 }
 
-function TokenStack({ actor, tokens, enter, lift = 0 }: { actor: Actor; tokens: Token[]; enter: Map<string, number>; lift?: number }) {
+function TokenStack({ actor, tokens, enter, lift = 0, k: shown = 1 }: { actor: Actor; tokens: Token[]; enter: Map<string, number>; lift?: number; k?: number }) {
+  if (shown <= 0.001) return null;
   const g0 = iso(actor.at[0], actor.at[1], DEVICE_META[actor.kind].top);
   const g = { x: g0.x, y: g0.y - lift };
   return (
-    <g>
+    <g opacity={shown}>
       {tokens.map((tk, i) => {
         const k = enter.get(tk.label) ?? 1;
         const w = tk.label.length * 8.4 + 22;
@@ -193,39 +197,28 @@ function Callout({ at, text, k, active }: { at: P; text: string; k: number; acti
   );
 }
 
-export function IsoStage({ tl, t, width, height, reduced = false, textScale = 1, insetTop = 0, insetBottom = 0, gpu = false }: Props) {
+export function IsoStage({ tl, t, width, height, reduced = false, textScale = 1, insetTop = 0, insetBottom = 0, live = false, spot = null }: Props) {
+  const spotIds = spot ? new Set([spot.from, spot.to, spot.at, ...(spot.focus ?? [])].filter(Boolean) as string[]) : null;
+  const dimmed = (id: string) => (spotIds && !spotIds.has(id) ? 'spot is-dim' : 'spot');
   const cur = locate(tl, t);
   const innerH = Math.max(1, height - insetTop - insetBottom);
-  const camInner = cameraAt(tl, cur, width / innerH, reduced);
+  const camInner = useFollowCamera(cameraAt(tl, cur, width / innerH, reduced), live && !reduced, tl);
   const k = camInner.h / innerH;
+  // Kamera = viewBox: wektor rysowany na nowo w każdej klatce, zawsze ostry (bez rastrowania warstwy).
   const cam = { x: camInner.x, y: camInner.y - insetTop * k, w: camInner.w, h: camInner.h + (insetTop + insetBottom) * k };
-  // Stały kadr bazowy (plan ogólny) — viewBox się nie zmienia, kamerę realizuje transformacja warstwy.
-  const base = useMemo(() => {
-    const o = overview(tl.actors, width / innerH);
-    const ko = o.h / innerH;
-    return { x: o.x, y: o.y - insetTop * ko, w: o.w, h: o.h + (insetTop + insetBottom) * ko };
-  }, [tl, width, innerH, insetTop, insetBottom]);
-  const zoom = base.w / cam.w;
-  const s0 = width / base.w;
-  const tx = -(cam.x - base.x) * s0 * zoom;
-  const ty = -(cam.y - base.y) * s0 * zoom;
-  const camMoving = gpu && !reduced && ((cur.index >= 0 && cur.p < 0.46) || (cur.t > tl.stepsEnd && cur.t < tl.stepsEnd + 1.5));
   const byId = useMemo(() => Object.fromEntries(tl.actors.map((a) => [a.id, a])), [tl]);
   const c = useMemo(() => centroid(tl.actors), [tl]);
-  const links = useMemo(() => usedLinks(tl), [tl]);
   const order = useMemo(() => [...tl.actors].sort((a, b) => a.at[0] + a.at[1] - (b.at[0] + b.at[1])), [tl]);
-  const routesLayer = useMemo(
-    () => (
-      <g className="routes">
-        {links.map(([a, b]) => {
-          if (!byId[a] || !byId[b]) return null;
-          const hostile = byId[a].hostile || byId[b].hostile;
-          return <path key={`${a}-${b}`} d={pathD(routePoints(byId[a], byId[b], c))} className={`route ${hostile ? 'route-hostile' : ''}`} />;
-        })}
-      </g>
-    ),
-    [links, byId, c],
+  const routes = useMemo(
+    () =>
+      usedLinks(tl)
+        .filter(([a, b]) => byId[a] && byId[b])
+        .map(([a, b]) => ({ a, b, d: pathD(routePoints(byId[a], byId[b], c)), hostile: !!(byId[a].hostile || byId[b].hostile) })),
+    [tl, byId, c],
   );
+  const appearTimes = useMemo(() => Object.fromEntries(tl.actors.map((a) => [a.id, appearAt(tl, a)])), [tl]);
+  // Aktor pojawia się, gdy kamera odsłania go w ujęciu otwierającym (sprężyna: lekkie wyjście w górę).
+  const appearK = (id: string) => (reduced ? clamp(t / 0.3) : spring(t - (appearTimes[id] ?? 0), 12, 0.75));
 
   const idx = cur.index;
   const state = stateBefore(tl, Math.max(0, idx));
@@ -251,7 +244,6 @@ export function IsoStage({ tl, t, width, height, reduced = false, textScale = 1,
     for (const sc of step.shows ?? []) if (p > 0.78) screens[sc.at] = sc;
   }
 
-  const appear = (i: number) => (reduced ? clamp(t / 0.3) : spring(t - 0.15 - i * 0.07, 12, 0.75));
 
   // Bieżąca trasa
   let active: { pts: P[]; len: number } | null = null;
@@ -270,7 +262,7 @@ export function IsoStage({ tl, t, width, height, reduced = false, textScale = 1,
   const hop = !step || reduced ? 0 : Math.sin(Math.PI * (step.at ? seg(p, 0.6, 0.78) : seg(p, 0.74, 0.92))) * 7;
 
   const fs = textScale;
-  const viewBox = `${base.x} ${base.y} ${base.w} ${base.h}`;
+  const viewBox = `${cam.x.toFixed(2)} ${cam.y.toFixed(2)} ${cam.w.toFixed(2)} ${cam.h.toFixed(2)}`;
 
   return (
     <div className="stage-cam" style={{ width, height }}>
@@ -281,15 +273,19 @@ export function IsoStage({ tl, t, width, height, reduced = false, textScale = 1,
       height={height}
       role="img"
       aria-label={`${tl.mech.name}: ${tl.variant.name}`}
-      style={{
-        transform: `translate(${tx.toFixed(2)}px, ${ty.toFixed(2)}px) scale(${zoom.toFixed(5)})`,
-        transformOrigin: '0 0',
-        willChange: camMoving ? 'transform' : 'auto',
-      }}
     >
       <Grid_ />
-      {/* Trasy w tle */}
-      {routesLayer}
+      {/* Trasy w tle — rysują się, gdy oba końce są już w kadrze */}
+      <g className="routes">
+        {routes.map((r) => {
+          const kr = Math.min(appearK(r.a), appearK(r.b));
+          return kr > 0.01 ? <path key={`${r.a}-${r.b}`} d={r.d} className={`route ${r.hostile ? 'route-hostile' : ''}`} opacity={clamp(kr)} /> : null;
+        })}
+      </g>
+      {/* Podgląd trasy kroku wskazanego na liście */}
+      {spot?.from && spot.to && byId[spot.from] && byId[spot.to] && (
+        <path d={pathD(routePoints(byId[spot.from], byId[spot.to], c))} className={`route-preview ${toneClass(spot.msg?.tone)}`} />
+      )}
       {/* Poprzednia trasa (wygaszanie) */}
       {prevRoute && prev && (
         <g className={`route-active ${toneClass(prev.msg?.tone)}`} opacity={fadeOut}>
@@ -328,8 +324,7 @@ export function IsoStage({ tl, t, width, height, reduced = false, textScale = 1,
       {/* Urządzenia */}
       <g className="devices">
         {order.map((a) => {
-          const i = tl.actors.indexOf(a);
-          const k = appear(i);
+          const k = appearK(a.id);
           const g = iso(a.at[0], a.at[1]);
           const involved = step ? [step.from, step.to, step.at].includes(a.id) : false;
           return (
@@ -339,19 +334,23 @@ export function IsoStage({ tl, t, width, height, reduced = false, textScale = 1,
               opacity={clamp(k * 1.3)}
               className={`dev ${a.hostile ? 'hostile' : ''} ${involved ? 'is-involved' : ''}`}
             >
-              <Device kind={a.kind} />
+              <g className={dimmed(a.id)}>
+                <Device kind={a.kind} />
+              </g>
             </g>
           );
         })}
       </g>
       {/* Etykiety */}
       <g className="labels">
-        {tl.actors.map((a, i) => {
+        {tl.actors.map((a) => {
           const g = iso(a.at[0], a.at[1]);
-          const k = clamp(appear(i) * 1.2);
+          const k = clamp(appearK(a.id) * 1.2);
           return (
             <g key={a.id} transform={`translate(${g.x} ${g.y + 64})`} opacity={k} className={`label ${a.hostile ? 'hostile' : ''}`}>
-              <LabelText label={a.label} note={a.note} fs={fs} />
+              <g className={dimmed(a.id)}>
+                <LabelText label={a.label} note={a.note} fs={fs} />
+              </g>
             </g>
           );
         })}
@@ -359,7 +358,7 @@ export function IsoStage({ tl, t, width, height, reduced = false, textScale = 1,
       {/* Ekrany (adres strony itp.) */}
       {tl.actors.map((a) => {
         const sc = screens[a.id];
-        return sc ? <ScreenTag key={a.id} actor={a} text={sc.text} tone={sc.tone} k={clamp(appear(0) * 1.2)} /> : null;
+        return sc ? <ScreenTag key={a.id} actor={a} text={sc.text} tone={sc.tone} k={clamp(appearK(a.id) * 1.2)} /> : null;
       })}
       {/* Żetony */}
       {tl.actors.map((a) => (
@@ -369,6 +368,7 @@ export function IsoStage({ tl, t, width, height, reduced = false, textScale = 1,
           tokens={tokens.filter((x) => x.at === a.id)}
           enter={enter.get(a.id) ?? new Map()}
           lift={screens[a.id] && DEVICE_META[a.kind].screen ? 46 : 0}
+          k={clamp(appearK(a.id) * 1.2)}
         />
       ))}
       {/* Obliczenie poprzedniego kroku (wygaszanie) */}

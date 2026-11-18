@@ -6,6 +6,7 @@ import type { CriterionGroup, Profile } from '@content/types';
 import { href } from '../router';
 import { TopBar } from '../ui/TopBar';
 import { useSlider } from '../ui/useSlider';
+import { useTweened } from '../ui/motion';
 
 const GROUP_NAME: Record<CriterionGroup, string> = {
   A: 'Bezpieczeństwo',
@@ -15,6 +16,11 @@ const GROUP_NAME: Record<CriterionGroup, string> = {
 };
 
 const fmt = (v: number) => v.toFixed(2).replace('.', ',');
+
+/** Wynik, który przy zmianie profilu wag dojeżdża do nowej wartości (jak licznik przyrządu). */
+function TweenVal({ v }: { v: number }) {
+  return <span className="bar-val">{fmt(useTweened(v))}</span>;
+}
 
 interface Tip {
   x: number;
@@ -71,7 +77,7 @@ export function Porownanie({ onToggleTheme }: { onToggleTheme: () => void }) {
                   <span className="bar-track" title={groups.map((g) => `${GROUP_NAME[g]}: ${fmt(groupMean(m.id, g))}`).join(' · ')}>
                     <span className="bar-fill" style={{ width: `${((v - 1) / 4) * 100}%` }} />
                   </span>
-                  <span className="bar-val">{fmt(v)}</span>
+                  <TweenVal v={v} />
                   <span className="bar-fit">{scores[m.id].D4.label}</span>
                 </li>
               );
@@ -103,8 +109,10 @@ export function Porownanie({ onToggleTheme }: { onToggleTheme: () => void }) {
                     <th />
                     {criteria.map((c) => (
                       <th key={c.id} className={`heat-crit g-${c.group}`} title={c.desc}>
-                        <span className="crit-id">{c.id}</span>
-                        <span className="crit-name">{c.name}</span>
+                        <span className="crit-rot">
+                          <span className="crit-id">{c.id}</span>
+                          <span className="crit-name">{c.name}</span>
+                        </span>
                       </th>
                     ))}
                   </tr>

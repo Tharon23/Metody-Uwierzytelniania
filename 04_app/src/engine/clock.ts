@@ -12,7 +12,7 @@ export class Clock {
   total = 1;
   speed = 1;
   private stopAt: number | null = null;
-  private tween: { from: number; to: number; start: number; dur: number; then: 'pause' | 'play' } | null = null;
+  private tween: { from: number; to: number; start: number; dur: number; after?: number } | null = null;
   private raf = 0;
   private last = 0;
   private listeners = new Set<() => void>();
@@ -32,13 +32,15 @@ export class Clock {
       const k = Math.min(1, (now - this.tween.start) / this.tween.dur);
       this.t = this.tween.from + (this.tween.to - this.tween.from) * easeMove(k);
       if (k >= 1) {
-        const then = this.tween.then;
+        const after = this.tween.after;
         this.tween = null;
-        if (then === 'pause') {
+        if (after === undefined || after <= this.t + 1e-3) {
           this.playing = false;
           this.emit();
           return;
         }
+        // Po przewinięciu: dalej normalne odtwarzanie do zadanej chwili.
+        this.stopAt = after;
       }
     } else if (this.playing) {
       let n = this.t + dt * this.speed;
@@ -117,11 +119,14 @@ export class Clock {
     this.emit();
   }
 
-  /** Płynne przewinięcie czasu do celu (np. krok wstecz): scena przechodzi przez stany pośrednie. */
-  glideTo(target: number, durMs = 520) {
+  /**
+   * Płynne przewinięcie czasu do celu (krok wstecz, skok na dalszy krok): scena przechodzi przez
+   * stany pośrednie zamiast ciąć. Z `after` — po dojechaniu gra dalej normalnie do tej chwili.
+   */
+  glideTo(target: number, durMs = 520, after?: number) {
     this.stopAt = null;
     this.playing = true;
-    this.tween = { from: this.t, to: Math.max(0, Math.min(this.total, target)), start: performance.now(), dur: durMs, then: 'pause' };
+    this.tween = { from: this.t, to: Math.max(0, Math.min(this.total, target)), start: performance.now(), dur: durMs, after };
     this.run();
     this.emit();
   }

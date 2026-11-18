@@ -16,6 +16,19 @@ export function useSize<T extends HTMLElement>() {
   return [ref, size] as const;
 }
 
+/** Skala interfejsu względem projektu (rem / 16 px) — rośnie i maleje z autoskalowaniem w CSS. */
+export function useUiScale(): number {
+  const read = () => parseFloat(getComputedStyle(document.documentElement).fontSize) / 16 || 1;
+  const [s, setS] = useState(read);
+  useEffect(() => {
+    const on = () => setS(read());
+    on();
+    window.addEventListener('resize', on);
+    return () => window.removeEventListener('resize', on);
+  }, []);
+  return s;
+}
+
 export function useReducedMotion() {
   const [r, setR] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   useEffect(() => {

@@ -67,7 +67,8 @@
   --font-cond: 'IBM Plex Sans Condensed', 'IBM Plex Sans', 'Symbole', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', 'Symbole', ui-monospace, monospace;
 
-  /* Skala modułowa: baza 16 px, stosunek 1,25 (tercja wielka). Dół skali stały, nic poniżej 14 px;
+  /* Skala modułowa: baza 16 px, stosunek 1,25 (tercja wielka). Dół skali 0,875 rem (14 px przy
+     1920×1080; autoskalowanie w app.css zmniejsza całość proporcjonalnie na mniejszych ekranach);
      płynne (clamp z członem rem — działa przy powiększeniu) tylko tytuły. */
   --fs-display: clamp(2.4375rem, 1.6rem + 2.4vw, 3.8125rem); /* 39 → 61 */
   --fs-title: clamp(1.5625rem, 1.1rem + 1.2vw, 2.4375rem);   /* 25 → 39 */
