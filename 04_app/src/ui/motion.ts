@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { easeOutCubic } from '../engine/easing';
-
-const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+import { isReducedMotion as reducedMotion } from './motionPref';
 
 /** Liczba, która przy zmianie dojeżdża do nowej wartości (licznik jak w przyrządzie pomiarowym). */
 export function useTweened(value: number, ms = 480): number {

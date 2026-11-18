@@ -175,7 +175,7 @@ kbd {
   cursor: text !important;
 }
 .lock-cursor {
-  --lc: var(--attack);
+  --lc: var(--ink);
   position: fixed;
   left: 0;
   top: 0;
@@ -198,54 +198,28 @@ kbd {
 }
 .lock-cursor svg {
   position: absolute;
-  left: -15px;
-  top: -15px;
-  width: 30px;
-  height: 30px;
+  left: -1.5px;
+  top: -1.5px;
   overflow: visible;
-  transition: transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: 1.5px 1.5px;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.35));
+  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.lc-ring {
-  fill: color-mix(in srgb, var(--lc) 14%, transparent);
-  stroke: var(--lc);
-  stroke-width: 1.5;
-  transition: stroke 160ms var(--ease-out), fill 160ms var(--ease-out);
-}
-.lc-body {
+.lc-arrow {
   fill: var(--lc);
-  transition: fill 160ms var(--ease-out);
-}
-.lc-key {
   stroke: var(--paper);
-  stroke-width: 1.6;
-  stroke-linecap: round;
-}
-.lc-shackle {
-  fill: none;
-  stroke: var(--lc);
-  stroke-width: 1.9;
-  stroke-linecap: round;
-  transform-box: view-box;
-  transform-origin: 3.6px 0.3px;
-  transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), stroke 160ms var(--ease-out);
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+  transition: fill 140ms var(--ease-out);
 }
 .lock-cursor.is-hot svg {
-  transform: scale(1.14);
-}
-.lock-cursor.is-hot .lc-shackle {
-  transform: translateY(-2.2px) rotate(24deg);
+  transform: rotate(-8deg) scale(1.08);
 }
 .lock-cursor.is-down svg {
   transform: scale(0.86);
 }
 .lock-cursor.is-hot.is-down svg {
-  transform: scale(1);
-}
-@media (prefers-reduced-motion: reduce) {
-  .lock-cursor svg,
-  .lc-shackle {
-    transition: none;
-  }
+  transform: rotate(-8deg) scale(0.94);
 }
 
 /* Znak żyje: górna warstwa oddycha (±1,8 j. w 4,8 s), zielony znacznik obiega jej krawędź */
@@ -285,10 +259,8 @@ kbd {
     stroke-dashoffset: 0;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .mark-scan {
-    display: none;
-  }
+.reduce-motion .mark-scan {
+  display: none;
 }
 .mech-nav {
   display: flex;
@@ -462,6 +434,67 @@ kbd {
 .step-num {
   font-family: var(--font-mono);
   font-size: 0.85em;
+}
+/* Znacznik kroku: zakończony (ptaszek), bieżący (pierścień postępu), następny (numer) */
+.step-item {
+  position: relative;
+}
+.step-item button {
+  align-items: start;
+}
+.step-mark {
+  display: block;
+  width: 1.45rem;
+  height: 1.45rem;
+  margin-top: -0.12rem;
+  overflow: visible;
+}
+.sm-track {
+  fill: var(--paper);
+  stroke: var(--rule);
+  stroke-width: 1.5;
+}
+.sm-prog {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+.sm-num {
+  fill: currentColor;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.is-done .sm-track {
+  fill: var(--ink-soft);
+  stroke: var(--ink-soft);
+}
+.sm-check {
+  fill: none;
+  stroke: var(--paper);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.is-now .sm-track {
+  stroke: color-mix(in srgb, var(--ink) 22%, transparent);
+}
+/* Łącznik między znacznikami: wypełnia się, gdy krok jest zakończony */
+.step-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: calc(0.4rem + 0.725rem - 0.5px);
+  top: calc(0.5rem + 1.45rem - 0.05rem);
+  bottom: calc(-0.5rem + 0.05rem);
+  width: 1px;
+  background: var(--rule);
+  pointer-events: none;
+}
+.step-item.is-done:not(:last-child)::after {
+  background: var(--ink-soft);
 }
 .step-dot {
   width: 0.4375rem;
@@ -1035,6 +1068,28 @@ kbd {
   margin: 0;
   color: var(--ink-soft);
 }
+.motion-pref {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  margin-top: 1rem;
+}
+.motion-pref > span {
+  width: 6rem;
+  color: var(--ink-soft);
+}
+.motion-pref .seg button[aria-checked='true'] {
+  background: var(--ink);
+  color: var(--paper);
+}
+.motion-note {
+  margin: 0;
+  flex-basis: 100%;
+  color: var(--ink-soft);
+  font-size: var(--fs-small);
+  max-width: 34rem;
+}
 .overlay-close {
   margin-top: 1rem;
   border: 1px solid var(--rule);
@@ -1177,13 +1232,12 @@ kbd {
   font-size: 14px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
+/* Ruch ograniczony (ustawienie w aplikacji, klawisz R): bez animacji przejść interfejsu */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
 }
 
 /* Wąskie ekrany: sama scena + transport, panele schowane (aplikacja jest projektowana pod mysz i klawiaturę) */

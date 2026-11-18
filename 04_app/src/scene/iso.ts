@@ -99,3 +99,91 @@ export function fitAspect(b: Box, aspect: number): Box {
   else w = h * aspect;
   return { x: cx - w / 2, y: cy - h / 2, w, h };
 }
+
+/**
+ * Tor jednego kierunku na trasie a → b: łamana w siatce przesunięta o `offset` w bok względem
+ * kierunku jazdy (zawsze na tę samą stronę), więc tory a → b i b → a leżą obok siebie.
+ * Końce skrócone o `trim` (jednostki siatki), żeby groty nie chowały się pod urządzeniami.
+ */
+export function laneGrid(path: Grid[], offset: number, trim: number): Grid[] {
+  const n = path.length;
+  if (n < 2) return path;
+  const normals = path.slice(1).map((b, i) => {
+    const a = path[i];
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const L = Math.hypot(dx, dy) || 1;
+    return [-dy / L, dx / L] as Grid;
+  });
+  const shifted = path.map((p, i) => {
+    const before = normals[i - 1];
+    const after = normals[i];
+    let nx: number;
+    let ny: number;
+    if (before && after) {
+      const dot = before[0] * after[0] + before[1] * after[1];
+      // Załamanie pod kątem prostym: przesunięcie po obu normalnych (szew bez ucięcia).
+      nx = dot > 0.99 ? after[0] : before[0] + after[0];
+      ny = dot > 0.99 ? after[1] : before[1] + after[1];
+    } else {
+      const m = before ?? after;
+      nx = m[0];
+      ny = m[1];
+    }
+    return [p[0] + nx * offset, p[1] + ny * offset] as Grid;
+  });
+  return trimGrid(shifted, trim);
+}
+
+function trimGrid(p: Grid[], trim: number): Grid[] {
+  const len = (a: Grid, b: Grid) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+  let total = 0;
+  for (let i = 1; i < p.length; i++) total += len(p[i - 1], p[i]);
+  const t = Math.min(trim, total * 0.3);
+  const cut = (pts: Grid[]): Grid[] => {
+    let left = t;
+    const out = [...pts];
+    while (out.length > 1) {
+      const s = len(out[0], out[1]);
+      if (s > left) {
+        const k = left / s;
+        out[0] = [out[0][0] + (out[1][0] - out[0][0]) * k, out[0][1] + (out[1][1] - out[0][1]) * k];
+        return out;
+      }
+      left -= s;
+      out.shift();
+    }
+    return out;
+  };
+  return cut(cut(p).reverse()).reverse();
+}
+
+/** Początkowy fragment łamanej do ułamka długości f (rysowanie linii bez sztuczek z dasharray). */
+export function partial(p: P[], f: number): P[] {
+  if (f >= 1) return p;
+  if (f <= 0) return [p[0], p[0]];
+  const L = polyLength(p);
+  let left = f * L;
+  const out: P[] = [p[0]];
+  for (let i = 1; i < p.length; i++) {
+    const s = Math.hypot(p[i].x - p[i - 1].x, p[i].y - p[i - 1].y);
+    if (s >= left) {
+      const k = s === 0 ? 0 : left / s;
+      out.push({ x: p[i - 1].x + (p[i].x - p[i - 1].x) * k, y: p[i - 1].y + (p[i].y - p[i - 1].y) * k });
+      return out;
+    }
+    out.push(p[i]);
+    left -= s;
+  }
+  return out;
+}
+
+/** Kąt (stopnie) ostatniego niezerowego odcinka łamanej — obrót grotu na czubku linii. */
+export function tipAngle(p: P[]): number {
+  for (let i = p.length - 1; i > 0; i--) {
+    const dx = p[i].x - p[i - 1].x;
+    const dy = p[i].y - p[i - 1].y;
+    if (Math.abs(dx) + Math.abs(dy) > 1e-6) return (Math.atan2(dy, dx) * 180) / Math.PI;
+  }
+  return 0;
+}

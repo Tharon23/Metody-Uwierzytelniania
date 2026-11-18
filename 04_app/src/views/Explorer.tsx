@@ -13,6 +13,7 @@ import { IsoStage, CHANNEL_LABEL } from '../scene/IsoStage';
 import { SeqStage } from '../scene/SeqStage';
 import { useReducedMotion, useSize, useUiScale } from '../ui/useSize';
 import { useStoredFlag } from '../ui/prefs';
+import { setReducedMotion, systemPrefersReduced, toggleReducedMotion } from '../ui/motionPref';
 import { useSlider } from '../ui/useSlider';
 import { TopBar } from '../ui/TopBar';
 import { FactorList, OutcomeBadge } from '../ui/bits';
@@ -246,6 +247,7 @@ export function Explorer({
       else if (k === 'v' || k === 'V') setView((v) => (v === 'scena' ? 'sekwencja' : 'scena'));
       else if (k === 'a' || k === 'A') cycleVariant(e.shiftKey ? -1 : 1);
       else if (k === 'l' || k === 'L') setShowList((s) => !s);
+      else if ((k === 'r' || k === 'R') && !e.repeat) toggleReducedMotion();
       else if (k === 'd' || k === 'D') setDiagramOnly((s) => !s);
       else if (k === 'f' || k === 'F') {
         if (document.fullscreenElement) document.exitFullscreen();
@@ -315,7 +317,7 @@ export function Explorer({
                     onFocus={() => setSpot(s.index)}
                     onBlur={() => setSpot(null)}
                   >
-                    <span className="step-num">{s.index + 1}</span>
+                    <StepMark state={state} index={s.index} clock={clock} tl={tl} />
                     <span className="step-title">{s.step.title}</span>
                     {s.step.result && <span className={`step-dot r-${s.step.result}`} aria-hidden />}
                   </button>
@@ -474,6 +476,46 @@ export function Explorer({
   );
 }
 
+/**
+ * Znacznik kroku na liście: zakończony — ptaszek, następny — numer, bieżący — numer w pierścieniu,
+ * który wypełnia się z postępem kroku (widać, który krok właśnie się odtwarza i ile mu zostało).
+ */
+function StepMark({ state, index, clock, tl }: { state: 'done' | 'now' | 'next'; index: number; clock: Clock; tl: Timeline }) {
+  return (
+    <svg className="step-mark" viewBox="0 0 24 24" aria-hidden>
+      <circle cx={12} cy={12} r={10.5} className="sm-track" />
+      {state === 'done' ? (
+        <path d="M7.4 12.4l3.1 3.1 6.2-6.6" className="sm-check" />
+      ) : (
+        <>
+          {state === 'now' && <StepRing index={index} clock={clock} tl={tl} />}
+          <text x={12} y={12.4} className="sm-num">{index + 1}</text>
+        </>
+      )}
+    </svg>
+  );
+}
+
+/** Pierścień postępu bieżącego kroku — jedyny element listy odświeżany w trakcie kroku. */
+function StepRing({ index, clock, tl }: { index: number; clock: Clock; tl: Timeline }) {
+  const p = useClockValue(clock, (c) => {
+    const cur = locate(tl, c.t);
+    return cur.index === index ? Math.round(cur.p * 150) / 150 : cur.index > index ? 1 : 0;
+  });
+  return (
+    <circle
+      cx={12}
+      cy={12}
+      r={10.5}
+      className="sm-prog"
+      pathLength={1}
+      strokeDasharray="1 1"
+      strokeDashoffset={1 - p}
+      transform="rotate(-90 12 12)"
+    />
+  );
+}
+
 /** Scena subskrybuje czas co klatkę; reszta Explorera nie renderuje się przy każdej klatce. */
 function LiveStage({
   clock, tl, view, width, height, reduced, diagramOnly, spot, spotIndex,
@@ -547,11 +589,13 @@ const KEYS: [string, string][] = [
   ['D', 'sam arkusz'],
   ['F', 'pełny ekran'],
   ['T', 'motyw jasny / ciemny'],
+  ['R', 'ruch pełny / ograniczony'],
   ['Ctrl+K', 'szukaj'],
   ['Esc', 'zamknij'],
 ];
 
 function HelpOverlay({ onClose }: { onClose: () => void }) {
+  const reduced = useReducedMotion();
   return (
     <div className="overlay" role="dialog" aria-label="Skróty klawiszowe" onClick={onClose}>
       <div className="overlay-card" onClick={(e) => e.stopPropagation()}>
@@ -561,6 +605,16 @@ function HelpOverlay({ onClose }: { onClose: () => void }) {
             <div key={k}><dt><kbd>{k}</kbd></dt><dd>{v}</dd></div>
           ))}
         </dl>
+        <div className="motion-pref">
+          <span>Ruch</span>
+          <div className="seg" role="radiogroup" aria-label="Ruch">
+            <button role="radio" aria-checked={!reduced} onClick={() => setReducedMotion(false)}>Pełny</button>
+            <button role="radio" aria-checked={reduced} onClick={() => setReducedMotion(true)}>Ograniczony</button>
+          </div>
+          {systemPrefersReduced() && !reduced && (
+            <p className="motion-note">System prosi o mniej ruchu. Aplikacja domyślnie gra pełne animacje, bo to one pokazują przebieg; tryb ograniczony zatrzymuje kamerę.</p>
+          )}
+        </div>
         <button className="overlay-close" onClick={onClose}>Zamknij</button>
       </div>
     </div>

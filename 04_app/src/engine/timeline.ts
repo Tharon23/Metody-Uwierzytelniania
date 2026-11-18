@@ -5,8 +5,8 @@ export const PACE = 0.6;
 /** Długość kroku o wadze 1 (s). */
 export const STEP_SECONDS = 2.8 / PACE;
 /**
- * Ujęcie otwierające: kamera zaczyna blisko pierwszego urządzenia (tylko ono jest widoczne),
- * potem odjeżdża do planu ogólnego, a pozostali aktorzy pojawiają się, gdy wchodzą w kadr.
+ * Wejście na arkusz: plan ogólny, urządzenia pojawiają się po kolei, potem wysuwają się tory
+ * połączeń (choreo.ts).
  */
 export const LEAD_SECONDS = 3.4;
 /** Zakończenie: werdykt / oddech po ostatnim kroku. */
@@ -105,24 +105,4 @@ export const stepEndTime = (tl: Timeline, i: number) =>
 export function stepParticipants(step: Step): string[] {
   if (step.focus) return step.focus;
   return [step.from, step.to, step.at].filter(Boolean) as string[];
-}
-
-/** Aktor, od którego zaczyna się ujęcie otwierające (nadawca albo miejsce pierwszego kroku). */
-export function openingActor(tl: Timeline): Actor {
-  const first = tl.steps[0]?.step;
-  const id = first ? (first.from ?? first.at ?? first.to) : undefined;
-  return tl.actors.find((a) => a.id === id) ?? tl.actors[0];
-}
-
-/**
- * Chwila (s), w której aktor pojawia się w ujęciu otwierającym: najpierw aktor otwierający,
- * potem pozostali według odległości od niego — w miarę jak kamera odsłania plan.
- */
-export function appearAt(tl: Timeline, actor: Actor): number {
-  const o = openingActor(tl);
-  if (actor.id === o.id) return 0.12;
-  const d = (a: Actor) => Math.hypot(a.at[0] - o.at[0], a.at[1] - o.at[1]);
-  const rank = tl.actors.filter((a) => a.id !== o.id).sort((a, b) => d(a) - d(b)).indexOf(actor);
-  const n = Math.max(1, tl.actors.length - 1);
-  return 0.95 + (rank / n) * 1.25;
 }

@@ -199,7 +199,8 @@ function Row({ step, index, k, now, y, slope, labelSpace, lane, laneX, laneGap, 
     const draw = reduced ? 1 : easeInOutCubic(seg(k, 0.1, 0.62));
     const tip = { x: x1 + dx * draw, y: y0 + slope * draw };
     const ang = Math.atan2(slope, dx);
-    const headK = reduced ? 1 : spring((k - 0.6) * 4, 14, 0.55);
+    // Grot prowadzi rysowaną linię od nadawcy do odbiorcy (jak pióro), zamiast wyskakiwać na końcu.
+    const headK = reduced ? 1 : clamp(draw * 14);
     const label = step.msg ? step.msg.label : step.title;
     const chan = step.msg ? CHANNEL_LABEL[step.msg.channel] : '';
     const maxW = Math.max(Math.abs(dx) * 1.5, laneGap * 1.2);
@@ -213,12 +214,11 @@ function Row({ step, index, k, now, y, slope, labelSpace, lane, laneX, laneGap, 
         {num}
         <circle cx={x1} cy={y0} r={3.5} className="seq-origin" />
         <line x1={x1} y1={y0} x2={tip.x} y2={tip.y} className="seq-arrow" />
-        {draw > 0.02 && draw < 0.98 && <circle cx={tip.x} cy={tip.y} r={5.5} className="packet-dot" />}
         {headK > 0.01 && (
           <path
             d="M-12 -6 L0 0 L-12 6"
             className="seq-arrow-head"
-            transform={`translate(${x2} ${y0 + slope}) rotate(${((ang * 180) / Math.PI).toFixed(2)}) scale(${clamp(headK, 0, 1.2).toFixed(3)})`}
+            transform={`translate(${tip.x.toFixed(2)} ${tip.y.toFixed(2)}) rotate(${((ang * 180) / Math.PI).toFixed(2)}) scale(${headK.toFixed(3)})`}
           />
         )}
         <text x={mid} y={y0 - 9} textAnchor="middle" className="seq-label" style={{ fontSize: fs }} opacity={labelK} transform={`translate(0 ${((1 - labelK) * 5).toFixed(2)})`}>

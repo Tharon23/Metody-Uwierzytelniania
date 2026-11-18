@@ -32,7 +32,36 @@
   opacity: 0.55;
 }
 
+/* Tory w tle: dwa równoległe, przerywane, z grotami na końcach (kierunek tam i z powrotem) */
+.lane {
+  fill: none;
+  stroke: var(--ink-faint);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lane-head {
+  fill: none;
+  stroke: var(--ink-faint);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lane-pair.is-hostile .lane,
+.lane-pair.is-hostile .lane-head {
+  stroke: var(--attack);
+  stroke-opacity: 0.55;
+}
+
 .route-active .route-draw {
+  fill: none;
+  stroke: var(--tone, var(--ink));
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.route-active .route-head {
   fill: none;
   stroke: var(--tone, var(--ink));
   stroke-width: 2.6;

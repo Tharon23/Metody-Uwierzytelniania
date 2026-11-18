@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 
-/** Elementy, nad którymi kłódka się otwiera (da się kliknąć). */
+/** Elementy klikalne — nad nimi wskaźnik zielenieje. */
 const HOT = 'a[href], button:not(:disabled), [role="button"], [role="tab"], [role="slider"], summary, label, select, .cell, [data-cursor="hot"]';
 const TEXT = 'input, textarea, [contenteditable="true"]';
 
 /**
- * Kursor-kłódka: czerwona, zamknięta; nad czymś klikalnym zielenieje i otwiera się.
+ * Kursor-wskaźnik: smukła strzałka w kolorze tuszu; nad czymś klikalnym zielenieje i lekko
+ * się pochyla (wskazuje), przy kliknięciu przysiada.
  * Pozycja ustawiana bezpośrednio w pointermove (bez wygładzania i bez renderów Reacta) —
  * żadnego opóźnienia względem ruchu myszy. Tylko dla myszy/rysika z najechaniem; na polach
  * tekstowych wraca zwykły kursor tekstowy, w trybie kiosku znika razem z systemowym.
@@ -60,13 +61,9 @@ export function LockCursor() {
   if (!enabled) return null;
   return (
     <div ref={ref} className="lock-cursor" aria-hidden>
-      <svg viewBox="-16 -16 32 32">
-        <circle r={13} className="lc-ring" />
-        <g transform="translate(0 1.5)">
-          <path d="M-3.6 -1.2 V-4.6 a3.6 3.6 0 0 1 7.2 0 V-1.2" className="lc-shackle" />
-          <rect x={-5.6} y={-1.4} width={11.2} height={8.6} rx={1.8} className="lc-body" />
-          <path d="M0 1.6 V3.8" className="lc-key" />
-        </g>
+      {/* Smukła strzałka; czubek w (1,5; 1,5) = punkt kliknięcia (svg przesunięte o −1,5 px). */}
+      <svg viewBox="0 0 20 22" width={20} height={22}>
+        <path d="M1.5 1.5 L1.5 17.2 L5.7 13.1 L12.9 12.7 Z" className="lc-arrow" />
       </svg>
     </div>
   );

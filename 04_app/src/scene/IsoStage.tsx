@@ -1,11 +1,12 @@
 import { memo, useMemo } from 'react';
 import type { Actor, Channel, Step, Token, Tone } from '@content/types';
-import { clamp, decayShake, easeInOutCubic, easeOutCubic, easeOutQuart, seg, spring } from '../engine/easing';
-import { appearAt, locate, stateBefore, STEP_SECONDS, type Timeline } from '../engine/timeline';
+import { clamp, decayShake, easeOutCubic, easeOutQuart, seg, spring } from '../engine/easing';
+import { locate, stateBefore, STEP_SECONDS, type Timeline } from '../engine/timeline';
 import { cameraAt } from './camera';
+import { actorVis, appearAt, centroidOf, drawK, laneIntro, lanePath, PHASE } from './choreo';
 import { useFollowCamera } from './follow';
 import { Device, DEVICE_META } from './devices/Device';
-import { iso, pathD, pointAt, polyLength, route, type Grid, type P } from './iso';
+import { iso, partial, pathD, pointAt, tipAngle, type P } from './iso';
 
 export const CHANNEL_LABEL: Record<Channel, string> = {
   tls: 'TLS',
@@ -43,13 +44,27 @@ interface Props {
   spot?: Step | null;
 }
 
-function centroid(actors: Actor[]): Grid {
-  const n = actors.length || 1;
-  return [actors.reduce((s, a) => s + a.at[0], 0) / n, actors.reduce((s, a) => s + a.at[1], 0) / n];
+/** Grot strzałki: czubek w (0, 0), skierowany wzdłuż osi x. */
+function Head({ at, angle, scale = 1, className }: { at: P; angle: number; scale?: number; className: string }) {
+  if (scale <= 0.01) return null;
+  return (
+    <path
+      d="M-9 -5.2 L0 0 L-9 5.2"
+      className={className}
+      transform={`translate(${at.x.toFixed(2)} ${at.y.toFixed(2)}) rotate(${angle.toFixed(2)}) scale(${scale.toFixed(3)})`}
+    />
+  );
 }
 
-function routePoints(a: Actor, b: Actor, c: Grid): P[] {
-  return route(a.at, b.at, c).map(([x, y]) => iso(x, y));
+/** Przerywany tor w tle; wysuwa się od nadawcy (f: 0–1), grot pojawia się na końcu. */
+function Lane({ pts, f }: { pts: P[]; f: number }) {
+  const end = pts[pts.length - 1];
+  return (
+    <>
+      <path d={pathD(partial(pts, f))} className="lane" />
+      <Head at={end} angle={tipAngle(pts)} scale={clamp((f - 0.9) * 10)} className="lane-head" />
+    </>
+  );
 }
 
 /** Pary aktorów połączone w tym wariancie (do rysowania tras w tle). */
@@ -207,18 +222,26 @@ export function IsoStage({ tl, t, width, height, reduced = false, textScale = 1,
   // Kamera = viewBox: wektor rysowany na nowo w każdej klatce, zawsze ostry (bez rastrowania warstwy).
   const cam = { x: camInner.x, y: camInner.y - insetTop * k, w: camInner.w, h: camInner.h + (insetTop + insetBottom) * k };
   const byId = useMemo(() => Object.fromEntries(tl.actors.map((a) => [a.id, a])), [tl]);
-  const c = useMemo(() => centroid(tl.actors), [tl]);
+  const c = useMemo(() => centroidOf(tl.actors), [tl]);
   const order = useMemo(() => [...tl.actors].sort((a, b) => a.at[0] + a.at[1] - (b.at[0] + b.at[1])), [tl]);
-  const routes = useMemo(
+  // Każda para połączonych aktorów ma dwa tory: tam (a → b) i z powrotem (b → a).
+  const lanes = useMemo(
     () =>
       usedLinks(tl)
         .filter(([a, b]) => byId[a] && byId[b])
-        .map(([a, b]) => ({ a, b, d: pathD(routePoints(byId[a], byId[b], c)), hostile: !!(byId[a].hostile || byId[b].hostile) })),
+        .map(([a, b]) => ({ a, b, ab: lanePath(byId[a], byId[b], c), ba: lanePath(byId[b], byId[a], c), hostile: !!(byId[a].hostile || byId[b].hostile) })),
     [tl, byId, c],
   );
+  const laneFor = (from: string, to: string): P[] => {
+    const l = lanes.find((x) => (x.a === from && x.b === to) || (x.a === to && x.b === from));
+    return l ? (l.a === from ? l.ab : l.ba) : lanePath(byId[from], byId[to], c);
+  };
   const appearTimes = useMemo(() => Object.fromEntries(tl.actors.map((a) => [a.id, appearAt(tl, a)])), [tl]);
   // Aktor pojawia się, gdy kamera odsłania go w ujęciu otwierającym (sprężyna: lekkie wyjście w górę).
   const appearK = (id: string) => (reduced ? clamp(t / 0.3) : spring(t - (appearTimes[id] ?? 0), 12, 0.75));
+  // Aktorzy spoza bieżącego kroku rozpływają się; odbiorca wchodzi, gdy strzałka rusza w drogę.
+  const vis: Record<string, number> = Object.fromEntries(tl.actors.map((a) => [a.id, actorVis(tl, cur, a.id)]));
+  const shown = (id: string) => clamp(appearK(id) * 1.2) * (vis[id] ?? 1);
 
   const idx = cur.index;
   const state = stateBefore(tl, Math.max(0, idx));
@@ -245,18 +268,16 @@ export function IsoStage({ tl, t, width, height, reduced = false, textScale = 1,
   }
 
 
-  // Bieżąca trasa
-  let active: { pts: P[]; len: number } | null = null;
-  if (step?.from && step.to && byId[step.from] && byId[step.to]) {
-    const ptsL = routePoints(byId[step.from], byId[step.to], c);
-    active = { pts: ptsL, len: polyLength(ptsL) };
-  }
+  // Bieżąca strzałka: rysuje się torem swojego kierunku, grot prowadzi linię.
+  let active: P[] | null = null;
+  if (step?.from && step.to && byId[step.from] && byId[step.to]) active = laneFor(step.from, step.to);
+  const travel = active ? drawK(p) : 0;
 
   // Poprzedni krok gaśnie płynnie na początku bieżącego (zamiast znikać skokowo).
   const prev = idx > 0 ? tl.steps[idx - 1].step : null;
-  const fadeOut = reduced ? 0 : 1 - easeOutCubic(seg(p, 0, 0.22));
+  const fadeOut = 1 - easeOutCubic(seg(p, 0, 0.22));
   let prevRoute: P[] | null = null;
-  if (prev?.from && prev.to && byId[prev.from] && byId[prev.to] && fadeOut > 0) prevRoute = routePoints(byId[prev.from], byId[prev.to], c);
+  if (prev?.from && prev.to && byId[prev.from] && byId[prev.to] && fadeOut > 0) prevRoute = laneFor(prev.from, prev.to);
   // Miękki podskok odbiorcy przy przyjęciu wiadomości (lub aktora przy obliczeniu).
   const hopId = step ? (step.to ?? step.at) : undefined;
   const hop = !step || reduced ? 0 : Math.sin(Math.PI * (step.at ? seg(p, 0.6, 0.78) : seg(p, 0.74, 0.92))) * 7;
@@ -275,33 +296,41 @@ export function IsoStage({ tl, t, width, height, reduced = false, textScale = 1,
       aria-label={`${tl.mech.name}: ${tl.variant.name}`}
     >
       <Grid_ />
-      {/* Trasy w tle — rysują się, gdy oba końce są już w kadrze */}
-      <g className="routes">
-        {routes.map((r) => {
-          const kr = Math.min(appearK(r.a), appearK(r.b));
-          return kr > 0.01 ? <path key={`${r.a}-${r.b}`} d={r.d} className={`route ${r.hostile ? 'route-hostile' : ''}`} opacity={clamp(kr)} /> : null;
+      {/* Tory w tle: po dwa na parę (tam i z powrotem), wysuwają się po wejściu obu końców */}
+      <g className="lanes">
+        {lanes.map((l) => {
+          const k = Math.min(vis[l.a] ?? 1, vis[l.b] ?? 1);
+          const f = laneIntro(tl, byId[l.a], byId[l.b], t, reduced);
+          if (k <= 0.01 || f <= 0.001) return null;
+          return (
+            <g key={`${l.a}-${l.b}`} className={`lane-pair ${l.hostile ? 'is-hostile' : ''}`} opacity={k}>
+              <Lane pts={l.ab} f={f} />
+              <Lane pts={l.ba} f={f} />
+            </g>
+          );
         })}
       </g>
       {/* Podgląd trasy kroku wskazanego na liście */}
-      {spot?.from && spot.to && byId[spot.from] && byId[spot.to] && (
-        <path d={pathD(routePoints(byId[spot.from], byId[spot.to], c))} className={`route-preview ${toneClass(spot.msg?.tone)}`} />
+      {spot?.from && spot.to && byId[spot.from] && byId[spot.to] && (vis[spot.from] ?? 0) > 0.5 && (vis[spot.to] ?? 0) > 0.5 && (
+        <path d={pathD(laneFor(spot.from, spot.to))} className={`route-preview ${toneClass(spot.msg?.tone)}`} />
       )}
-      {/* Poprzednia trasa (wygaszanie) */}
+      {/* Poprzednia strzałka (wygaszanie) */}
       {prevRoute && prev && (
         <g className={`route-active ${toneClass(prev.msg?.tone)}`} opacity={fadeOut}>
           <path d={pathD(prevRoute)} className="route-draw" />
+          <Head at={prevRoute[prevRoute.length - 1]} angle={tipAngle(prevRoute)} className="route-head" />
         </g>
       )}
-      {/* Aktywna trasa */}
-      {active && step && (
+      {/* Bieżąca strzałka: linia rysuje się za grotem */}
+      {active && step && travel > 0 && (
         <g className={`route-active ${toneClass(step.msg?.tone)}`}>
-          <path
-            d={pathD(active.pts)}
-            className="route-draw"
-            strokeDasharray={`${active.len} ${active.len}`}
-            strokeDashoffset={active.len * (1 - easeOutQuart(seg(p, 0.06, 0.34)))}
+          <path d={pathD(partial(active, travel))} className="route-draw" />
+          <Head
+            at={pointAt(active, travel)}
+            angle={tipAngle(partial(active, Math.max(travel, 0.002)))}
+            scale={clamp(travel * 12)}
+            className="route-head"
           />
-          <path d={pathD(active.pts)} className="route-flow" strokeDashoffset={-t * 60} opacity={seg(p, 0.25, 0.4) * (1 - seg(p, 0.85, 1))} />
         </g>
       )}
       {/* Pierścień przyjęcia (pod urządzeniem) */}
@@ -325,13 +354,15 @@ export function IsoStage({ tl, t, width, height, reduced = false, textScale = 1,
       <g className="devices">
         {order.map((a) => {
           const k = appearK(a.id);
+          const v = vis[a.id] ?? 1;
+          if (v <= 0.002) return null;
           const g = iso(a.at[0], a.at[1]);
           const involved = step ? [step.from, step.to, step.at].includes(a.id) : false;
           return (
             <g
               key={a.id}
-              transform={`translate(${g.x} ${g.y + (1 - k) * 26 - (a.id === hopId ? hop : 0)})`}
-              opacity={clamp(k * 1.3)}
+              transform={`translate(${g.x} ${(g.y + (1 - k) * 26 + (1 - v) * 16 - (a.id === hopId ? hop : 0)).toFixed(2)})`}
+              opacity={clamp(k * 1.3) * v}
               className={`dev ${a.hostile ? 'hostile' : ''} ${involved ? 'is-involved' : ''}`}
             >
               <g className={dimmed(a.id)}>
@@ -345,7 +376,8 @@ export function IsoStage({ tl, t, width, height, reduced = false, textScale = 1,
       <g className="labels">
         {tl.actors.map((a) => {
           const g = iso(a.at[0], a.at[1]);
-          const k = clamp(appearK(a.id) * 1.2);
+          const k = shown(a.id);
+          if (k <= 0.002) return null;
           return (
             <g key={a.id} transform={`translate(${g.x} ${g.y + 64})`} opacity={k} className={`label ${a.hostile ? 'hostile' : ''}`}>
               <g className={dimmed(a.id)}>
@@ -358,7 +390,7 @@ export function IsoStage({ tl, t, width, height, reduced = false, textScale = 1,
       {/* Ekrany (adres strony itp.) */}
       {tl.actors.map((a) => {
         const sc = screens[a.id];
-        return sc ? <ScreenTag key={a.id} actor={a} text={sc.text} tone={sc.tone} k={clamp(appearK(a.id) * 1.2)} /> : null;
+        return sc && shown(a.id) > 0.002 ? <ScreenTag key={a.id} actor={a} text={sc.text} tone={sc.tone} k={shown(a.id)} /> : null;
       })}
       {/* Żetony */}
       {tl.actors.map((a) => (
@@ -368,7 +400,7 @@ export function IsoStage({ tl, t, width, height, reduced = false, textScale = 1,
           tokens={tokens.filter((x) => x.at === a.id)}
           enter={enter.get(a.id) ?? new Map()}
           lift={screens[a.id] && DEVICE_META[a.kind].screen ? 46 : 0}
-          k={clamp(appearK(a.id) * 1.2)}
+          k={shown(a.id)}
         />
       ))}
       {/* Obliczenie poprzedniego kroku (wygaszanie) */}
@@ -395,23 +427,12 @@ export function IsoStage({ tl, t, width, height, reduced = false, textScale = 1,
         const k = step.at ? seg(p, 0.12, 0.7) : seg(p, 0.75, 1);
         return <Callout at={g} text={step.calc} k={k} active />;
       })()}
-      {/* Pakiet */}
+      {/* Etykieta wiadomości jedzie nad grotem strzałki */}
       {active && step?.msg && (() => {
-        const travel = easeInOutCubic(seg(p, 0.3, 0.76));
-        const pos = pointAt(active.pts, travel);
-        const show = seg(p, 0.26, 0.34) * (1 - seg(p, 0.86, 0.98));
+        const pos = pointAt(active, travel);
+        const show = easeOutCubic(seg(p, PHASE.draw[0] - 0.04, PHASE.draw[0] + 0.05)) * (1 - seg(p, 0.86, 0.98));
         if (show <= 0) return null;
-        const trail = [0.035, 0.07, 0.105].map((d, i) => ({ q: pointAt(active!.pts, Math.max(0, easeInOutCubic(seg(p - d * 0.46, 0.3, 0.76)))), r: 4.6 - i * 1.1, o: 0.45 - i * 0.13 }));
-        return (
-          <g>
-            {travel > 0.02 && travel < 0.98 &&
-              trail.map((tr, i) => (
-                <circle key={i} cx={tr.q.x} cy={tr.q.y} r={tr.r} className={`packet-dot ${toneClass(step.msg!.tone)}`} opacity={show * tr.o} />
-              ))}
-            <circle cx={pos.x} cy={pos.y} r={6} className={`packet-dot ${toneClass(step.msg.tone)}`} opacity={show} />
-            <Pill x={pos.x} y={pos.y - 34} text={step.msg.label} tone={step.msg.tone} badge={CHANNEL_LABEL[step.msg.channel]} opacity={show} scale={fs} />
-          </g>
-        );
+        return <Pill x={pos.x} y={pos.y - 34 - (1 - show) * 8} text={step.msg.label} tone={step.msg.tone} badge={CHANNEL_LABEL[step.msg.channel]} opacity={show} scale={fs} />;
       })()}
       {/* Wynik poprzedniego kroku (wygaszanie) */}
       {prev?.result && fadeOut > 0 && (() => {

@@ -29,13 +29,5 @@ export function useUiScale(): number {
   return s;
 }
 
-export function useReducedMotion() {
-  const [r, setR] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  useEffect(() => {
-    const m = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const on = () => setR(m.matches);
-    m.addEventListener('change', on);
-    return () => m.removeEventListener('change', on);
-  }, []);
-  return r;
-}
+/** Preferencja ruchu z ustawienia aplikacji (nie z systemu) — patrz motionPref.ts. */
+export { useReducedMotion } from './motionPref';

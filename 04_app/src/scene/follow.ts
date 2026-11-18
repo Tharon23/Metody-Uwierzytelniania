@@ -8,7 +8,7 @@ import type { Box } from './iso';
  * czy zmianie rozmiaru kamera płynie zamiast ciąć. W wideo (Remotion) wyłączone — tam klatka
  * musi zależeć wyłącznie od czasu.
  */
-const OMEGA = 6.5;
+const OMEGA = 12;
 
 interface State {
   cx: number;
