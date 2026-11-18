@@ -1,0 +1,31 @@
+% Plik generowany: npm --prefix 04_app run gen:report — nie edytować ręcznie.
+\begin{table}[p]
+\centering
+\caption{Matryca porównawcza KM2: oceny 1--5 (5 = najkorzystniej). Kolumny Ø to średnie grup kryteriów.}
+\label{tab:matryca}
+\scriptsize
+\setlength{\tabcolsep}{2.6pt}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{lcccccccccccccccccc|cccc}
+\toprule
+ & \multicolumn{7}{c}{Bezpieczeństwo} & \multicolumn{3}{c}{Wdrażalność} & \multicolumn{4}{c}{UX} & \multicolumn{4}{c|}{Zgodność} & \multicolumn{4}{c}{Ø} \\
+Mechanizm & A1 & A2 & A3 & A4 & A5 & A6 & A7 & B1 & B2 & B3 & C1 & C2 & C3 & C4 & D1 & D2 & D3 & D4 & A & B & C & D \\
+\midrule
+Hasło & \sca{1} & \scc{3} & \sca{1} & \scd{4} & \sca{1} & \scb{2} & \scd{4} & \sce{5} & \sce{5} & \sce{5} & \scd{4} & \scd{4} & \scd{4} & \sce{5} & \scb{2} & \sca{1} & \sca{1} & \scb{2} & 2,29 & 5,00 & 4,25 & 1,50 \\
+SMS OTP & \sca{1} & \scb{2} & \scd{4} & \sca{1} & \scb{2} & \scd{4} & \scb{2} & \scc{3} & \sce{5} & \scc{3} & \scb{2} & \scb{2} & \scd{4} & \sce{5} & \scb{2} & \scd{4} & \sca{1} & \scb{2} & 2,29 & 3,67 & 3,25 & 2,25 \\
+TOTP (aplikacja) & \sca{1} & \scd{4} & \scd{4} & \sce{5} & \scb{2} & \scb{2} & \scc{3} & \sce{5} & \scd{4} & \sce{5} & \scb{2} & \scc{3} & \scb{2} & \scc{3} & \scc{3} & \scc{3} & \sca{1} & \scc{3} & 3,00 & 4,67 & 2,50 & 2,50 \\
+Push + number matching & \scb{2} & \scd{4} & \sce{5} & \scd{4} & \scc{3} & \sce{5} & \scd{4} & \scc{3} & \scb{2} & \scd{4} & \scc{3} & \scc{3} & \scc{3} & \scd{4} & \scc{3} & \sce{5} & \sca{1} & \scd{4} & 3,86 & 3,00 & 3,25 & 3,25 \\
+Klucz sprzętowy FIDO2 & \sce{5} & \sce{5} & \sce{5} & \sce{5} & \scd{4} & \sce{5} & \scd{4} & \sca{1} & \scd{4} & \scb{2} & \scc{3} & \scc{3} & \scb{2} & \scb{2} & \sce{5} & \scd{4} & \sce{5} & \scd{4} & 4,71 & 2,33 & 2,50 & 4,50 \\
+Passkey & \sce{5} & \sce{5} & \sce{5} & \scd{4} & \scd{4} & \sce{5} & \scd{4} & \scd{4} & \scd{4} & \sce{5} & \sce{5} & \sce{5} & \scd{4} & \scc{3} & \scd{4} & \scd{4} & \sce{5} & \sce{5} & 4,57 & 4,33 & 4,25 & 4,50 \\
+Biometria & \scd{4} & \sce{5} & \scc{3} & \sce{5} & \scd{4} & \sce{5} & \scd{4} & \scd{4} & \scc{3} & \scd{4} & \sce{5} & \sce{5} & \scc{3} & \sce{5} & \scb{2} & \scc{3} & \scc{3} & \scd{4} & 4,29 & 3,67 & 4,50 & 3,00 \\
+Karta płatnicza & \scc{3} & \scc{3} & \scc{3} & \sce{5} & \scc{3} & \scc{3} & \scb{2} & \scb{2} & \sce{5} & \scd{4} & \sce{5} & \sce{5} & \scd{4} & \sce{5} & \scc{3} & \scc{3} & \scc{3} & \scd{4} & 3,14 & 3,67 & 4,75 & 3,25 \\
+MFA i ocena ryzyka & \scc{3} & \scd{4} & \scd{4} & \scc{3} & \scc{3} & \scd{4} & \scd{4} & \scc{3} & \scc{3} & \scd{4} & \scb{2} & \scb{2} & \scb{2} & \scc{3} & \scd{4} & \sce{5} & \scc{3} & \sce{5} & 3,57 & 3,33 & 2,25 & 4,25 \\
+BLIK & \scc{3} & \scd{4} & \sce{5} & \scd{4} & \scb{2} & \sce{5} & \scd{4} & \scc{3} & \scb{2} & \scd{4} & \scd{4} & \scd{4} & \scc{3} & \sce{5} & \scc{3} & \sce{5} & \scc{3} & \scd{4} & 3,86 & 3,00 & 4,00 & 3,75 \\
+\bottomrule
+\end{tabular}
+
+\vspace{4pt}
+\begin{minipage}{0.92\linewidth}\scriptsize
+\textbf{A1} Phishing / AitM; \textbf{A2} Przechwycenie kanału; \textbf{A3} Powtórzenie; \textbf{A4} SIM-swap; \textbf{A5} Socjotechnika; \textbf{A6} Wyciek z serwera; \textbf{A7} Utrata urządzenia; \textbf{B1} Koszt; \textbf{B2} Interoperacyjność; \textbf{B3} Skalowalność; \textbf{C1} Tarcie; \textbf{C2} Czas; \textbf{C3} Dostępność i odzyskiwanie; \textbf{C4} Znajomość; \textbf{D1} NIST AAL; \textbf{D2} PSD2 SCA; \textbf{D3} Odporność na phishing; \textbf{D4} Dopasowanie B2B/B2C/C2C.
+\end{minipage}
+\end{table}

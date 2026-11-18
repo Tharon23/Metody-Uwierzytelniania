@@ -1,0 +1,186 @@
+/* Scena SVG: kreska, ściany, pakiety, żetony. */
+
+.stage-cam {
+  position: relative;
+  overflow: hidden;
+}
+.stage-cam > .stage-svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.stage-svg {
+  display: block;
+  font-family: var(--font-ui);
+  overflow: visible;
+}
+
+.iso-grid line {
+  stroke: var(--grid);
+  stroke-width: 1;
+}
+
+.route {
+  fill: none;
+  stroke: var(--ink-faint);
+  stroke-width: 1.6;
+  stroke-dasharray: 2 7;
+  stroke-linecap: round;
+}
+.route-hostile {
+  stroke: var(--attack);
+  opacity: 0.55;
+}
+
+.route-active .route-draw {
+  fill: none;
+  stroke: var(--tone, var(--ink));
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.route-active .route-flow {
+  fill: none;
+  stroke: var(--paper);
+  stroke-width: 2.8;
+  stroke-dasharray: 3 15;
+  stroke-linecap: round;
+}
+
+.tone-neutral { --tone: var(--ink); }
+.tone-ok { --tone: var(--ok); }
+.tone-warn { --tone: var(--warn); }
+.tone-attack { --tone: var(--attack); }
+
+.arrive {
+  fill: none;
+  stroke: var(--tone, var(--ink));
+  stroke-width: 2;
+}
+
+/* Urządzenia */
+.dev {
+  stroke: var(--ink);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.dev .f-top { fill: var(--face-top); }
+.dev .f-left { fill: var(--face-left); }
+.dev .f-right { fill: var(--face-right); }
+.dev .detail { stroke: var(--ink-soft); stroke-width: 1.2; fill: none; }
+.dev .stroke-main { stroke: var(--ink); stroke-width: 1.8; }
+.dev .screen { fill: var(--screen); stroke: var(--ink-soft); stroke-width: 1.2; }
+.dev .chip-face { fill: var(--warn); fill-opacity: 0.22; stroke: var(--warn); stroke-width: 1.2; }
+.dev .led { fill: var(--ok); stroke: none; }
+
+.dev.hostile { stroke: var(--attack); }
+.dev.hostile .f-top { fill: var(--face-top-h); }
+.dev.hostile .f-left { fill: var(--face-left-h); }
+.dev.hostile .f-right { fill: var(--face-right-h); }
+.dev.hostile .detail { stroke: var(--attack); stroke-opacity: 0.7; }
+.dev.hostile .led { fill: var(--attack); }
+
+/* Etykiety */
+.label text {
+  paint-order: stroke;
+  stroke: var(--paper);
+  stroke-width: 7px;
+  stroke-linejoin: round;
+}
+.label-name {
+  fill: var(--ink);
+  font-weight: 600;
+  font-family: var(--font-cond);
+  letter-spacing: 0.005em;
+}
+.label-note {
+  fill: var(--ink-soft);
+  font-family: var(--font-mono);
+}
+.label.hostile .label-name,
+.label.hostile .label-note { fill: var(--attack); }
+
+/* Pakiet */
+.packet-dot { fill: var(--tone, var(--ink)); }
+.pill-bg {
+  fill: var(--pill-bg);
+  stroke: var(--tone, var(--ink));
+  stroke-width: 1.8;
+}
+.pill-text {
+  fill: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 500;
+}
+.pill.tone-attack .pill-text { fill: var(--attack); }
+.pill-badge {
+  fill: var(--tone, var(--ink-soft));
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+}
+.pill-sep { stroke: var(--tone, var(--ink-soft)); stroke-opacity: 0.5; }
+
+/* Żetony */
+.token-bg {
+  fill: var(--pill-bg);
+  stroke: var(--tone, var(--ink-soft));
+  stroke-width: 1.4;
+}
+.token-text {
+  fill: var(--tone, var(--ink));
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+}
+.token.tone-neutral .token-text { fill: var(--ink-soft); }
+
+/* Ekran / adres */
+.screen-tag-bg {
+  fill: var(--pill-bg);
+  stroke: var(--tone, var(--ink));
+  stroke-width: 1.6;
+}
+.screen-tag-text {
+  fill: var(--tone, var(--ink));
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+}
+.screen-tag .lock { stroke: var(--tone, var(--ink)); stroke-width: 1.6; }
+.leader {
+  stroke: var(--ink-soft);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 3;
+}
+
+/* Wynik */
+.result-bg { fill: var(--paper); }
+.result-ring {
+  fill: none;
+  stroke: var(--tone);
+  stroke-width: 2.4;
+  transform: rotate(-90deg);
+}
+.result-glyph {
+  fill: none;
+  stroke: var(--tone);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Obliczenie */
+.callout-bg {
+  fill: var(--paper-deep);
+  stroke: var(--ink);
+  stroke-width: 1.4;
+}
+.callout-text {
+  fill: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 500;
+}

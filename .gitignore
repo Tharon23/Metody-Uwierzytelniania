@@ -15,3 +15,12 @@ dist/
 .vercel/
 .env
 .env.local
+
+# Playwright MCP artefakty (lokalne)
+.playwright-mcp/
+
+# Wideo: render wyjściowy duży — trzymamy tylko wybrane pliki
+05_video/output/*.mp4
+!05_video/output/zwiastun.mp4
+04_app/out/
+*.tsbuildinfo

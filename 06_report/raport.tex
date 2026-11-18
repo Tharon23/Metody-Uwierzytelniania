@@ -1,0 +1,239 @@
+% Raport końcowy (KM4). Kompilacja: latexmk -lualatex -outdir=output raport.tex
+% Tabele w generated/ i zrodla.bib generuje: npm --prefix 04_app run gen:report
+\documentclass[11pt,a4paper]{article}
+\usepackage{fontspec}
+\usepackage[polish]{babel}
+\usepackage[a4paper,margin=2.4cm,includefoot]{geometry}
+\usepackage{booktabs,longtable,array,multirow}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{pdflscape}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{csquotes}
+\usepackage[backend=biber,style=numeric-comp,sorting=none,maxbibnames=4]{biblatex}
+\usepackage[hidelinks]{hyperref}
+\addbibresource{zrodla.bib}
+
+\directlua{luaotfload.add_fallback("fb", {"DejaVuSans:mode=node;", "Segoe UI Symbol:mode=node;"})}
+\setmainfont{TeX Gyre Pagella}[RawFeature={fallback=fb}]
+\setsansfont{TeX Gyre Heros}[RawFeature={fallback=fb}]
+\setmonofont{DejaVu Sans Mono}[Scale=0.82,RawFeature={fallback=fb}]
+\linespread{1.08}
+\setlist{itemsep=2pt,topsep=4pt}
+\captionsetup{font=small,labelfont=bf}
+
+% Skala mapy ciepła (jedna barwa, 1 → 5)
+\definecolor{s1}{HTML}{E3EDF6}
+\definecolor{s2}{HTML}{BCD3E8}
+\definecolor{s3}{HTML}{86AFD3}
+\definecolor{s4}{HTML}{4F86B8}
+\definecolor{s5}{HTML}{1F5A92}
+\setlength{\fboxsep}{1.6pt}
+\newcommand{\heat}[3]{\colorbox{#1}{\makebox[1.15em]{\textcolor{#2}{#3}}}}
+\newcommand{\sca}[1]{\heat{s1}{black}{#1}}
+\newcommand{\scb}[1]{\heat{s2}{black}{#1}}
+\newcommand{\scc}[1]{\heat{s3}{black}{#1}}
+\newcommand{\scd}[1]{\heat{s4}{white}{#1}}
+\newcommand{\sce}[1]{\heat{s5}{white}{\textbf{#1}}}
+
+\title{\textbf{Analiza porównawcza mechanizmów uwierzytelniania\\w transakcjach elektronicznych}\\[6pt]\large Raport końcowy projektu (KM4)}
+\author{Kamil Szkarłat (koordynator) \and Jakub Szkaradek \and Bartłomiej Ząbek \and Radosław Chruściński \and Wojciech Śliwa \and Mikołaj Mierzwa\\[8pt]
+\small Bezpieczne Transakcje Elektroniczne, Akademia Górniczo-Hutnicza w Krakowie}
+\date{Kraków, rok akademicki 2026/2027}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent Porównujemy dziesięć mechanizmów uwierzytelniania używanych w transakcjach elektronicznych: hasło, SMS OTP, TOTP, powiadomienia push z dopasowaniem liczby, klucze sprzętowe FIDO2, passkeys, biometrię, karty płatnicze (EMV i pasek magnetyczny), uwierzytelnianie wieloskładnikowe z oceną ryzyka oraz BLIK. Każdy mechanizm oceniamy w osiemnastu kryteriach z czterech grup (bezpieczeństwo, wdrażalność, wygoda, zgodność) w skali 1--5, z uzasadnieniem opartym na źródłach. Matrycę uzupełnia analiza wektorów ataków (phishing w czasie rzeczywistym, SIM-swap, zmęczenie powiadomieniami, przekaźnik NFC, wyciek bazy, socjotechnika) oraz ranking ważony dla relacji B2B, B2C i C2C. Najlepszy kompromis daje passkey; jedynie mechanizmy oparte na WebAuthn są odporne na phishing pośredniczący. Słabym punktem wdrożeń okazują się ścieżki zapasowe i odzyskiwanie konta. Wynikiem projektu jest też interaktywna wizualizacja webowa z trybem pokazu i wideo, zbudowana z tych samych danych co raport.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ─────────────────────────────────────────────────────────────
+\section{Wstęp}
+
+Uwierzytelnianie odpowiada na pytanie, czy po drugiej stronie jest ta osoba, za którą się podaje. W transakcjach elektronicznych od tej odpowiedzi zależą pieniądze, dane i odpowiedzialność prawna. Dyrektywa PSD2 wymaga dla płatności silnego uwierzytelniania klienta (SCA): co najmniej dwóch niezależnych elementów z trzech kategorii --- wiedzy, posiadania i cechy --- z dynamicznym powiązaniem z kwotą i odbiorcą~\cite{N3}. Wytyczne NIST SP 800-63B-4 porządkują uwierzytelniacze w poziomy pewności AAL1--AAL3 i wyróżniają wymóg odporności na phishing~\cite{N1}.
+
+Celem projektu jest odpowiedź na trzy pytania:
+\begin{enumerate}
+  \item Jak działają poszczególne mechanizmy i w którym kroku protokołu tkwią ich słabości?
+  \item Jak wypadają w porównaniu wielokryterialnym i od czego zależy wynik?
+  \item Która metoda jest najefektywniejsza w relacjach B2B, B2C i C2C oraz jak przeciwdziałać typowym atakom?
+\end{enumerate}
+
+Zakres mechanizmów pochodzi z bazy źródłowej KM1 (§8.1). Dodaliśmy BLIK jako rozszerzenie o polski kontekst płatności: to system, z którego na co dzień korzysta większość odbiorców wizualizacji, i dobry przykład mechanizmu, który technicznie spełnia SCA, a mimo to jest celem masowych oszustw socjotechnicznych.
+
+Raport ma cztery części: metodykę (rozdz.~\ref{sec:metodyka}), opis mechanizmów krok po kroku (rozdz.~\ref{sec:mechanizmy}), analizę zagrożeń i matrycę (rozdz.~\ref{sec:zagrozenia}--\ref{sec:matryca}) oraz rekomendacje i opis wizualizacji (rozdz.~\ref{sec:rekomendacje}--\ref{sec:wizualizacja}). Pełne uzasadnienia ocen znajdują się w załączniku~\ref{app:uzasadnienia}.
+
+% ─────────────────────────────────────────────────────────────
+\section{Metodyka}\label{sec:metodyka}
+
+\subsection{Kryteria i skala}
+Każdy mechanizm oceniono w skali 1--5, gdzie 5 oznacza wariant najkorzystniejszy dla bezpieczeństwa i użytkownika (np. przy koszcie: najtańszy). Kryteria pochodzą z KM1 §8.2 i tworzą cztery grupy:
+\begin{description}
+  \item[A. Bezpieczeństwo] odporność na: A1 phishing pośredniczący (AitM), A2 przechwycenie kanału, A3 powtórzenie, A4 przejęcie numeru (SIM-swap), A5 socjotechnikę i zmęczenie powiadomieniami, A6 wyciek z serwera, A7 utratę urządzenia;
+  \item[B. Wdrażalność] B1 koszt, B2 interoperacyjność, B3 skalowalność;
+  \item[C. Wygoda] C1 tarcie, C2 czas, C3 dostępność i odzyskiwanie, C4 znajomość;
+  \item[D. Zgodność] D1 poziom NIST AAL, D2 spełnienie PSD2 SCA, D3 status odporności na phishing, D4 dopasowanie do relacji B2B/B2C/C2C.
+\end{description}
+Kryteria D1--D3 mają wartość opisową (np. „AAL2”, „tak”) przeliczoną na skalę według stałych reguł. D1: AAL3 = 5; AAL2 albo AAL3 zależnie od wariantu (passkey, MFA) = 4; AAL2 = 3; AAL2 oznaczony przez NIST jako „restricted” (SMS), AAL1 oraz biometria, której NIST nie dopuszcza jako samodzielnego uwierzytelniacza = 2; mechanizmy płatnicze spoza klasyfikacji NIST (karta, BLIK) = 3 jako wartość neutralna. D2: spełnia SCA z dynamicznym powiązaniem z transakcją = 5; spełnia, ale tylko w połączeniu z dodatkowym elementem lub rozszerzeniem (SMS z hasłem, FIDO2 i passkey bez rozszerzenia wiążącego podpis z kwotą) = 4; częściowo = 3; nie = 1. D3: „tak” = 5, „częściowo” = 3, „nie” = 1.
+
+\subsection{Źródła}
+Każda ocena ma jednozdaniowe uzasadnienie i co najmniej jedno źródło. Podstawą jest baza KM1 (normy, specyfikacje, publikacje recenzowane, studia przypadków, raporty), z identyfikatorami N, S, P, A, R, W. Kilka źródeł uzupełniających (oznaczonych X, np. RFC 9106 dla Argon2, badanie SIM-swap Lee i in.~\cite{X2}, opis złośliwego oprogramowania NGate~\cite{X6}) dodaliśmy dopiero po sprawdzeniu, że adres lub DOI prowadzi do opisanej pracy. Zewnętrzny raport przygotowany na etapie researchu traktowaliśmy jako materiał pomocniczy: część wskazanych w nim publikacji i repozytoriów okazała się nieistniejąca, więc do raportu nie trafiła.
+
+\subsection{Profile relacji}
+Wynik zbiorczy dla relacji to średnia ważona średnich grup kryteriów. Wagi odzwierciedlają różne priorytety: w B2B liczą się przede wszystkim bezpieczeństwo i zgodność (A 45\%, B 20\%, C 10\%, D 25\%), w B2C bezpieczeństwo i wygoda w równowadze (35/15/35/15), w C2C wygoda i koszt (25/25/40/10). Wagi to nasze założenie projektowe, którego nie weryfikowaliśmy empirycznie, dlatego w rozdziale~\ref{sec:matryca} pokazujemy ranking dla wszystkich trzech profili i omawiamy, które pozycje są na wagi wrażliwe.
+
+\subsection{Jedno źródło danych}
+Opisy mechanizmów, przebiegi krok po kroku, warianty ataków i matryca istnieją w projekcie w jednym miejscu (moduły danych w repozytorium, katalog \texttt{03\_content/data}). Z tych samych danych powstają: aplikacja, wideo, dokument KM2 i tabele tego raportu. Testy automatyczne pilnują spójności: każda para mechanizm × kryterium ma ocenę i istniejące źródło, a obliczenia TOTP zgadzają się z wektorami testowymi RFC 4226 i RFC 6238.
+
+\subsection{Ograniczenia}
+Oceny są ekspercką syntezą literatury, nie pomiarem. Mechanizmy zależą od implementacji (np. push z dopasowaniem liczby i bez niego, passkey synchronizowany i związany z urządzeniem); oceniamy typowe, poprawne wdrożenie, a różnice opisujemy w uzasadnieniach. Biometrię oceniamy jako lokalne odblokowanie uwierzytelniacza, bo tak jest używana w praktyce i tak dopuszcza ją NIST~\cite{N1}.
+
+% ─────────────────────────────────────────────────────────────
+\section{Mechanizmy krok po kroku}\label{sec:mechanizmy}
+
+Dla każdego mechanizmu podajemy jego istotę, analogię używaną w wizualizacji, typowy przebieg (kto, co i do kogo wysyła) oraz warianty ataków z wynikiem. Przykłady używają fikcyjnych danych: bank działa pod domeną \texttt{bank.example} (zarezerwowaną w RFC 2606), fałszywa strona pod \texttt{bank.examp1e} (cyfra 1 zamiast litery l). Przebiegi są uproszczone tam, gdzie pełny protokół zaciemniłby sedno; uproszczenia opisuje aplikacja w objaśnieniach kroków.
+
+\input{generated/przeplywy}
+
+% ─────────────────────────────────────────────────────────────
+\section{Analiza zagrożeń}\label{sec:zagrozenia}
+
+Grupa A matrycy opisuje odporność na siedem wektorów ataków. Poniżej omawiamy te, które najsilniej różnicują mechanizmy.
+
+\subsection{Phishing pośredniczący (AitM)}
+Atakujący stawia stronę łudząco podobną do prawdziwej i na bieżąco przekazuje wszystko, co wpisze ofiara, do prawdziwego serwisu (narzędzia typu Evilginx). Kikuchi pokazuje, że większość badanych serwisów z 2FA jest podatna na ten scenariusz; odporne były jedynie wdrożenia FIDO2/WebAuthn~\cite{A1}. Przyczyna jest strukturalna: hasło, kod SMS, kod TOTP i odpowiedź push nie zawierają informacji o tym, na jakiej stronie zostały użyte. Szyfrowanie TLS nie pomaga, bo ofiara zestawia szyfrowane połączenie z domeną atakującego, która ma ważny certyfikat.
+
+WebAuthn odwraca ten układ: przeglądarka sama wpisuje do podpisywanych danych adres strony (origin), a klucz jest przypisany do identyfikatora domeny (rpId)~\cite{S1}. Fałszywa strona nie może poprosić o podpis dla cudzej domeny, a podpis dla własnej domeny nie przejdzie weryfikacji w banku. Odporność nie zależy więc od uwagi użytkownika. NCSC klasyfikuje poświadczenia FIDO2 jako niepodatne na phishing AitM, a hasła jako podatne zawsze~\cite{P6}.
+
+\subsection{Przejęcie numeru telefonu (SIM-swap)}
+Kod SMS dowodzi dostępu do numeru, a numer należy do operatora. Lee i in. wykazali, że operatorzy przenosili numer na nową kartę SIM po słabej weryfikacji, a część serwisów pozwalała przejąć konto samym SIM-swapem~\cite{X2}. NIST oznacza SMS jako uwierzytelniacz „ograniczony”~\cite{N1}. W Polsce od 2024~r. operator musi przed wydaniem duplikatu sprawdzić, czy numer PESEL nie jest zastrzeżony~\cite{X8} --- to utrudnia atak, ale go nie usuwa.
+
+\subsection{Zmęczenie powiadomieniami (MFA fatigue)}
+Gdy powiadomienie push wymaga tylko dotknięcia „Zatwierdź”, atakujący znający hasło wysyła je seriami, licząc na pomyłkę lub zniecierpliwienie. Tak przejęto w 2022~r. konto pracownika Ubera~\cite{A2}. Dopasowanie liczby (number matching) wiąże zatwierdzenie z ekranem logowania: ofiara, która nie widzi liczby, nie może zatwierdzić „na ślepo”~\cite{X5,X9}. Nie chroni to jednak przed pośrednikiem AitM, który po prostu pokaże ofierze prawdziwą liczbę.
+
+\subsection{Karty: skimming, powtórzenie, przekaźnik}
+Pasek magnetyczny zawiera dane statyczne i daje się skopiować tanim urządzeniem~\cite{A7,A8}. Chip EMV liczy dla każdej transakcji kryptogram z kwoty, liczby losowej terminala i licznika transakcji, więc nagranie komunikacji jest bezwartościowe. Kryptografia nie chroni jednak przed przekaźnikiem: złośliwa aplikacja NGate przenosiła na żywo komunikację z kartą ofiary do telefonu przestępcy przy bankomacie, a kryptogram był prawdziwy, bo liczyła go prawdziwa karta~\cite{X6}. Obroną są protokoły ograniczające czas odpowiedzi karty~\cite{A5} i edukacja: bank nie prosi o przyłożenie karty do telefonu.
+
+\subsection{Wyciek bazy i socjotechnika}
+Wyciek bazy szkodzi najbardziej tam, gdzie serwer przechowuje sekret wspólny z użytkownikiem: skróty haseł (łamane offline mimo soli i Argon2id, jeśli hasła są słabe~\cite{X3,X4}) i sekrety TOTP. Mechanizmy oparte na kryptografii asymetrycznej (FIDO2, passkey, push z kluczem urządzenia) przechowują po stronie serwera tylko klucze publiczne. Socjotechnika omija technikę: BLIK spełnia SCA z dynamicznym powiązaniem, a mimo to schemat „pożycz na BLIKa” działa, bo ofiara sama zatwierdza wypłatę, nie czytając potwierdzenia.
+
+\subsection{Granica uwierzytelniania}
+Kilka ataków dzieje się po skutecznym uwierzytelnieniu. Złośliwe oprogramowanie kradnące ciasteczka sesji przejmuje konto niezależnie od tego, czy logowanie odbyło się hasłem, czy passkeyem. Najsilniejszy mechanizm logowania trzeba więc uzupełnić krótkimi sesjami, ponownym potwierdzeniem przy ważnych operacjach i ochroną urządzenia końcowego.
+
+% ─────────────────────────────────────────────────────────────
+\section{Matryca porównawcza}\label{sec:matryca}
+
+Tabela~\ref{tab:matryca} zawiera wszystkie oceny, a tabela~\ref{tab:ranking} --- ranking ważony dla trzech profili. Uzasadnienia każdej komórki są w załączniku~\ref{app:uzasadnienia}.
+
+\begin{landscape}
+\input{generated/matryca}
+\end{landscape}
+
+\input{generated/ranking}
+
+\subsection{Wnioski z matrycy}
+Passkey prowadzi we wszystkich profilach: łączy pełną odporność na phishing i wyciek bazy z najniższym tarciem. Przegrywa tylko znajomością wśród użytkowników (57\% świadomości w 2024~r.~\cite{R1}), a wersja synchronizowana zależy od bezpieczeństwa konta chmurowego~\cite{P5}. Klucz FIDO2 ma najwyższą średnią w grupie bezpieczeństwa (4,71), ale koszt sprzętu, logistyka i odzyskiwanie po zgubieniu obniżają jego wynik poza profilem B2B~\cite{P3}. SMS zamyka ranking w każdym profilu; jego jedyną mocną stroną jest powszechność.
+
+Biometria, karta i BLIK zajmują wysokie miejsca dzięki wygodzie. Kolumna D4 przypomina jednak, że karta i BLIK to mechanizmy płatnicze, a biometria działa jako odblokowanie innego uwierzytelniacza. MFA wypada przeciętnie, bo oceniamy je jako całość: z passkeyem jest odporne na phishing, z hasłem i SMS-em już nie, a o wyniku decyduje najsłabsza dostępna ścieżka, w tym zapasowa~\cite{P11}.
+Wrażliwość na wagi: pierwsze miejsce (passkey) i ostatnie (SMS) nie zmieniają się między profilami, a klucz FIDO2 awansuje na drugie miejsce tylko w profilu B2B. Środek rankingu (karta, BLIK, push, MFA, TOTP, hasło) dzielą różnice rzędu dziesiątych części punktu, więc jego kolejność zależy od przyjętych wag i nie należy jej nadinterpretowywać.
+
+% ─────────────────────────────────────────────────────────────
+\section{Rekomendacje i metodyka przeciwdziałania}\label{sec:rekomendacje}
+
+\input{generated/zastosowanie}
+
+\subsection{Relacje B2B}
+\begin{itemize}
+  \item Dla kont uprzywilejowanych i administratorów: klucze sprzętowe FIDO2 (AAL3), dwa klucze na osobę, procedura odzyskiwania wymagająca osobistej weryfikacji.
+  \item Dla pozostałych pracowników: passkeys związane z urządzeniem lub zarządzane przez organizację; push wyłącznie z dopasowaniem liczby i kontekstem logowania~\cite{X5}.
+  \item Wyłączyć SMS i połączenia głosowe jako metody zapasowe; szkolenie powinno tłumaczyć, dlaczego klucz jest odporny na phishing, bo użytkownicy tego nie dostrzegają~\cite{P3}.
+\end{itemize}
+
+\subsection{Relacje B2C}
+\begin{itemize}
+  \item Passkeys jako domyślna metoda logowania, hasło i kod jednorazowy jako ścieżka przejściowa~\cite{R2}.
+  \item W bankowości: potwierdzenie w aplikacji z kwotą i odbiorcą (dynamiczne powiązanie wg PSD2~\cite{N3}), ocena ryzyka wymuszająca dodatkowy składnik przy nietypowych operacjach.
+  \item Ścieżki odzyskiwania i metody zapasowe projektować tak, by nie były słabsze od metody głównej~\cite{P11}.
+\end{itemize}
+
+\subsection{Relacje C2C}
+\begin{itemize}
+  \item BLIK i płatności zbliżeniowe zapewniają wygodę przy akceptowalnym ryzyku technicznym; ryzyko jest socjotechniczne.
+  \item Zasady dla użytkowników: kod BLIK przekazuje się tylko temu, komu się płaci; BLIK-iem nie „odbiera się” pieniędzy; prośbę znajomego o kod weryfikuje się telefonicznie; potwierdzenie w aplikacji trzeba przeczytać.
+  \item Zastrzeżenie numeru PESEL utrudnia wyłudzenie duplikatu karty SIM i kredytu na cudze dane~\cite{X8}.
+\end{itemize}
+
+\subsection{Zasady ogólne}
+\begin{enumerate}
+  \item Wybierać mechanizmy, w których odporność na phishing egzekwuje oprogramowanie (WebAuthn), a nie uwaga człowieka.
+  \item Przechowywać po stronie serwera wyłącznie klucze publiczne; hasła --- tylko jako skróty Argon2id z solą~\cite{X4}.
+  \item Każda ścieżka zapasowa jest częścią systemu uwierzytelniania i podlega tej samej ocenie co metoda główna.
+  \item Chronić sesję po zalogowaniu: krótki czas życia, ponowne potwierdzenie przy ważnych operacjach.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────
+\section{Wizualizacja}\label{sec:wizualizacja}
+
+Częścią projektu jest aplikacja webowa „Jak się logujemy?”, przeznaczona dla dwóch grup odbiorców: licealistów na dniach otwartych (warstwa podpisów i analogii) oraz studentów i prowadzącego (warstwa pól wiadomości, obliczeń i źródeł). Aplikacja działa statycznie (GitHub Pages) i offline.
+
+\subsection{Tryby}
+\begin{description}
+  \item[Arkusze] Każdy mechanizm to arkusz rysunku technicznego z listą kroków, sceną i panelem szczegółów (rys.~\ref{fig:explorer}). Scena ma dwa widoki: izometryczną topologię urządzeń i diagram sekwencji. Przed wariantem ataku aplikacja pyta, jak użytkownik myśli, że atak się skończy, a po nim pokazuje werdykt.
+  \item[Porównanie] Ranking ważony z przełącznikiem profili i mapa ciepła matrycy z uzasadnieniem i źródłami każdej oceny (rys.~\ref{fig:porownanie}).
+  \item[Pokaz] Pętla wszystkich mechanizmów (ok. 8,5~min) na osobny ekran, z dużymi podpisami; tryb kiosku blokuje wygaszanie ekranu (rys.~\ref{fig:pokaz}).
+  \item[Wideo] Te same sceny renderowane do MP4 (zwiastun 88~s i pełny pokaz).
+\end{description}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\linewidth]{figures/explorer-passkey.png}
+  \caption{Arkusz „Passkey”, wariant ataku phishingowego: przeglądarka odmawia podpisu, bo adres strony nie pasuje do domeny klucza.}
+  \label{fig:explorer}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\linewidth]{figures/porownanie.png}
+  \caption{Widok porównania: ranking ważony i mapa ciepła matrycy.}
+  \label{fig:porownanie}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.49\linewidth]{figures/pokaz-pytanie.png}\hfill
+  \includegraphics[width=0.49\linewidth]{figures/pokaz-werdykt.png}
+  \caption{Pokaz: pytanie przed atakiem i werdykt po nim (arkusz „Hasło”, phishing AitM).}
+  \label{fig:pokaz}
+\end{figure}
+
+\subsection{Założenia dydaktyczne}
+Projekt opiera się na zasadach uczenia się z multimediów: segmentacji (krótkie kroki sterowane przez użytkownika), sygnalizacji (kolor i ruch tylko na tym, co zmienia stan), ciągłości przestrzennej (etykieta wiadomości jedzie razem z pakietem) i spójności (brak dekoracyjnej „hakerskiej” grafiki). Pytanie przed atakiem każe odbiorcy przewidzieć wynik, zanim go zobaczy, a odpowiedź wraca w werdykcie. Kolor niesie stałe znaczenie: zielony --- weryfikacja udana, bursztynowy --- sekret w ruchu, czerwony --- atakujący.
+
+\subsection{Architektura}
+Każda scena jest czystą funkcją czasu: dla danego mechanizmu, wariantu i chwili $t$ zwraca rysunek SVG. Dzięki temu ten sam kod napędza tryb interaktywny (czas z zegara przeglądarki, przewijanie, skoki między krokami), pokaz i wideo (czas z numeru klatki w Remotion). Rysunki izometryczne są składane z brył opisanych współrzędnymi siatki, więc pozostają ostre na ekranach 4K. Kod TOTP na arkuszu 3 jest obliczany naprawdę (HMAC-SHA-1 z sekretem z wektorów testowych RFC~6238).
+
+Projekt jest inspirowany Protocol Explorer Diluma Sanjayi~\cite{W1} (informacja także w aplikacji). Kod, rysunki i treść powstały od podstaw.
+
+% ─────────────────────────────────────────────────────────────
+\section{Wnioski}
+
+\begin{enumerate}
+  \item Odporność na phishing pośredniczący zapewnia protokół. Spośród badanych mechanizmów mają ją tylko te oparte na WebAuthn (passkey, klucz FIDO2): wiążą podpis z domeną, a adres sprawdza przeglądarka, więc wynik nie zależy od uwagi użytkownika.
+  \item Mechanizmy oparte na kodach (SMS, TOTP) i prostych zatwierdzeniach (push bez dopasowania liczby) chronią przed odgadnięciem i wyciekiem hasła, ale nie przed pośrednikiem i socjotechniką. SMS dodatkowo zależy od bezpieczeństwa operatora.
+  \item Najlepszy kompromis bezpieczeństwa i wygody daje passkey. Klucz FIDO2 jest najbezpieczniejszy, ale opłaca się głównie w B2B i dla kont uprzywilejowanych.
+  \item Bezpieczeństwo wdrożenia wyznacza najsłabsza dostępna ścieżka: metoda zapasowa, odzyskiwanie konta, sesja po zalogowaniu.
+  \item W płatnościach technika (EMV, BLIK z dynamicznym powiązaniem) jest dojrzała; dominujące ataki --- przekaźnik NFC, „pożycz na BLIKa” --- wykorzystują człowieka. Edukacja jest tu równie ważna jak protokół.
+\end{enumerate}
+
+\printbibliography[heading=bibintoc,title={Bibliografia}]
+
+\appendix
+\section{Uzasadnienia ocen}\label{app:uzasadnienia}
+\input{generated/uzasadnienia}
+
+\end{document}

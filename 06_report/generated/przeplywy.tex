@@ -1,0 +1,298 @@
+% Plik generowany: npm --prefix 04_app run gen:report — nie edytować ręcznie.
+\subsection{Hasło}
+\label{sec:mech-haslo}
+Sekret, który znasz Ty i który serwer potrafi sprawdzić, nie przechowując go wprost. Czynniki: wiedza. \cite{N1,N4,N5,X3,X4,A1,P6,X1}
+
+\paragraph{Analogia.} Serwer nie trzyma Twojego hasła, tylko jego „odcisk”: wynik funkcji, której nie da się odwrócić. Przy logowaniu liczy odcisk jeszcze raz i porównuje. Problem w tym, że hasło wpisujesz Ty — a Ty możesz je wpisać na złej stronie.
+
+\paragraph{Przebieg: logowanie hasłem.} Ala wpisuje hasło, serwer liczy jego skrót Argon2id z solą i porównuje z zapisanym.
+\begingroup\footnotesize
+\begin{longtable}{@{}r p{0.2\linewidth} p{0.24\linewidth} p{0.46\linewidth}@{}}
+\toprule
+Nr & Kto $\rightarrow$ do kogo & Wiadomość / obliczenie & Co się dzieje \\
+\midrule
+\endhead
+1 & Ala $\rightarrow$ Przeglądarka & \texttt{hasło} & Ala wpisuje login i hasło na stronie bank.example. \\
+2 & Przeglądarka $\rightarrow$ Serwer banku & \texttt{POST /logowanie} & Przeglądarka wysyła login i hasło w szyfrowanym tunelu TLS. \\
+3 & Serwer banku $\rightarrow$ Baza kont & \texttt{SELECT sól, skrót} & Serwer pobiera z bazy sól i zapisany skrót hasła Ali. \\
+4 & Baza kont $\rightarrow$ Serwer banku & \texttt{sól + skrót} & Baza oddaje sól (16 bajtów) i skrót Argon2id. \\
+5 & Serwer banku & \texttt{Argon2id(hasło, sól) = skrót ✓} & Serwer liczy Argon2id z wpisanego hasła i soli, wynik zgadza się ze skrótem. \\
+6 & Serwer banku $\rightarrow$ Przeglądarka & \texttt{Set-Cookie: sesja} & Serwer odsyła ciasteczko sesji. Ala jest zalogowana. \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\paragraph{Warianty ataków.}
+\begin{description}
+\item[Phishing AitM] Fałszywa strona bank.examp1e pośredniczy między Alą a bankiem i przechwytuje hasło oraz sesję. \emph{Wynik: Atak udany. Hasło nie wie, na jakiej stronie je wpisano, a TLS szyfrował połączenie z fałszywą domeną.}
+\item[Wyciek bazy] Atakujący kradnie tabelę skrótów i próbuje odgadnąć hasła offline. \emph{Wynik: Częściowo udany. Sól i Argon2id chronią silne hasła, ale słabe i powtarzane padają.}
+\end{description}
+
+\subsection{SMS OTP}
+\label{sec:mech-sms}
+Jednorazowy kod wysyłany SMS-em na numer telefonu, wpisywany po haśle. Czynniki: wiedza + posiadanie. \cite{N1,A3,X2,X8,A1,P7,P8,N4}
+
+\paragraph{Analogia.} SMS sprawdza, czy masz dostęp do numeru telefonu, a nie czy jesteś sobą. Numer należy do operatora, który może go przenieść na inną kartę SIM — także na prośbę oszusta.
+
+\paragraph{Przebieg: logowanie z kodem sms.} Po haśle serwer wysyła 6-cyfrowy kod SMS-em, Ala przepisuje go do przeglądarki.
+\begingroup\footnotesize
+\begin{longtable}{@{}r p{0.2\linewidth} p{0.24\linewidth} p{0.46\linewidth}@{}}
+\toprule
+Nr & Kto $\rightarrow$ do kogo & Wiadomość / obliczenie & Co się dzieje \\
+\midrule
+\endhead
+1 & Przeglądarka $\rightarrow$ Serwer banku & \texttt{login + hasło} & Ala loguje się hasłem. Serwer prosi jeszcze o kod z SMS-a. \\
+2 & Serwer banku & \texttt{kod = 482913, ważny 300 s} & Serwer losuje 6 cyfr i zapamiętuje je na 5 minut. \\
+3 & Serwer banku $\rightarrow$ Operator & \texttt{wyślij SMS} & Serwer zleca wysłanie SMS-a przez bramkę operatora. \\
+4 & Operator $\rightarrow$ Sieć komórkowa & \texttt{SMS do abonenta} & Operator sprawdza, w której karcie SIM i pod którą stacją jest teraz numer Ali. \\
+5 & Sieć komórkowa $\rightarrow$ Telefon Ali & \texttt{Kod: 482913} & Stacja bazowa dostarcza SMS. Na ekranie: „Kod logowania: 482913”. \\
+6 & Ala $\rightarrow$ Przeglądarka & \texttt{482913} & Ala odczytuje kod z telefonu i wpisuje go w przeglądarce. \\
+7 & Przeglądarka $\rightarrow$ Serwer banku & \texttt{kod: 482913} & Kod się zgadza i jest ważny. Serwer kasuje go i wydaje sesję. \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\paragraph{Warianty ataków.}
+\begin{description}
+\item[SIM-swap] Oszust przekonuje operatora, by przeniósł numer Ali na nową kartę SIM, i odbiera jej kody. \emph{Wynik: Atak udany. SMS sprawdza numer, a numer da się przenieść na cudzą kartę SIM.}
+\item[Phishing AitM] Pośrednik przekazuje do banku najpierw hasło, a po chwili kod SMS wpisany przez Alę na fałszywej stronie. \emph{Wynik: Atak udany. Kod SMS nie wie, na jakiej stronie go wpisano — pośrednik używa go pierwszy.}
+\end{description}
+
+\subsection{TOTP (aplikacja)}
+\label{sec:mech-totp}
+Kod liczony co 30 sekund z czasu i sekretu, który znają tylko aplikacja i serwer (RFC 6238). Czynniki: wiedza + posiadanie. \cite{S3,S4,N1,A1,P7,P8,N4}
+
+\paragraph{Analogia.} Ty i bank macie dwa identyczne zegarki z tajnym mechanizmem. Co 30 sekund oba pokazują ten sam 6-cyfrowy kod, bez wysyłania czegokolwiek. Kłopot: kod przepisujesz Ty, więc można Cię namówić, żebyś przepisał go na złej stronie.
+
+\paragraph{Przebieg: kod z aplikacji.} Aplikacja liczy kod z sekretu i czasu, serwer liczy to samo i porównuje. Liczby na tym arkuszu są prawdziwe.
+\begingroup\footnotesize
+\begin{longtable}{@{}r p{0.2\linewidth} p{0.24\linewidth} p{0.46\linewidth}@{}}
+\toprule
+Nr & Kto $\rightarrow$ do kogo & Wiadomość / obliczenie & Co się dzieje \\
+\midrule
+\endhead
+1 & Aplikacja & \texttt{T = ⌊czas / 30⌋ = 58972110} & Aplikacja dzieli aktualny czas na okna po 30 s. Teraz to okno nr 58972110. \\
+2 & Aplikacja & \texttt{HMAC-SHA1(K, T) = 9ac77d08191b955a…} & Aplikacja liczy HMAC-SHA-1 z sekretu K i licznika T: 20 bajtów. \\
+3 & Aplikacja & \texttt{414995272 mod 10⁶ = 995272} & Z 20 bajtów aplikacja wycina 4 i bierze resztę z dzielenia przez milion: 995 272. \\
+4 & Ala $\rightarrow$ Przeglądarka & \texttt{995272} & Ala wpisuje kod z aplikacji w przeglądarce. \\
+5 & Przeglądarka $\rightarrow$ Serwer banku & \texttt{kod: 995272} & Przeglądarka wysyła kod razem z sesją logowania po haśle. \\
+6 & Serwer banku & \texttt{TOTP(K, 58972110) = 995272 ✓} & Serwer liczy TOTP z tego samego sekretu i czasu. Wynik się zgadza. Sesja wydana. \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\paragraph{Warianty ataków.}
+\begin{description}
+\item[Phishing AitM] Pośrednik przekazuje kod z aplikacji do banku, zanim minie 30-sekundowe okno. \emph{Wynik: Atak udany. 30 sekund to dużo czasu dla automatycznego pośrednika; kod nie jest związany z domeną.}
+\end{description}
+
+\subsection{Push + number matching}
+\label{sec:mech-push}
+Powiadomienie w aplikacji na telefonie; w wersji z dopasowaniem liczby trzeba wpisać liczbę widoczną na ekranie logowania. Czynniki: wiedza + posiadanie. \cite{N1,A2,X5,X9,P7,P10,N4}
+
+\paragraph{Analogia.} Zwykły push to dzwonek do drzwi: kto zadzwoni dwadzieścia razy w nocy, ten w końcu może usłyszeć „otwieram”. Dopasowanie liczby każe Ci najpierw spojrzeć przez wizjer — liczbę zna tylko ten, kto naprawdę siedzi przed ekranem logowania.
+
+\paragraph{Przebieg: push z dopasowaniem liczby.} Po haśle przeglądarka pokazuje liczbę, a Ala wpisuje ją w powiadomieniu na telefonie.
+\begingroup\footnotesize
+\begin{longtable}{@{}r p{0.2\linewidth} p{0.24\linewidth} p{0.46\linewidth}@{}}
+\toprule
+Nr & Kto $\rightarrow$ do kogo & Wiadomość / obliczenie & Co się dzieje \\
+\midrule
+\endhead
+1 & Przeglądarka $\rightarrow$ Serwer banku & \texttt{login + hasło} & Ala loguje się hasłem. Serwer losuje liczbę dwucyfrową: 47. \\
+2 & Serwer banku $\rightarrow$ Przeglądarka & \texttt{pokaż 47} & Przeglądarka pokazuje: „Wpisz w aplikacji liczbę 47”. \\
+3 & Serwer banku $\rightarrow$ Usługa push & \texttt{powiadom urządzenie} & Serwer prosi usługę push Apple/Google o powiadomienie dla telefonu Ali. \\
+4 & Usługa push $\rightarrow$ Aplikacja banku & \texttt{czy to Ty?} & Telefon Ali: „Logowanie z Krakowa, Chrome. Wpisz liczbę z ekranu”. \\
+5 & Ala $\rightarrow$ Aplikacja banku & \texttt{47} & Ala patrzy na ekran laptopa i wpisuje 47 w aplikacji. \\
+6 & Aplikacja banku $\rightarrow$ Serwer banku & \texttt{liczba 47 + podpis} & Aplikacja wysyła 47, podpisane kluczem zapisanym w telefonie przy rejestracji. \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\paragraph{Warianty ataków.}
+\begin{description}
+\item[Push bombing (zwykły push)] Atakujący zna hasło i zasypuje Alę powiadomieniami „Zatwierdzić?”, aż ta w końcu kliknie. \emph{Wynik: Atak udany. Jedno dotknięcie „Tak” bez kontekstu to za mało — znużenie robi resztę.}
+\item[Push bombing kontra dopasowanie liczby] Ten sam atak, ale aplikacja żąda liczby z ekranu logowania, którą widzi tylko atakujący. \emph{Wynik: Atak zablokowany. Dopasowanie liczby wiąże zatwierdzenie z ekranem logowania. Zostaje socjotechnika: nie podawaj nikomu liczby przez telefon.}
+\end{description}
+
+\subsection{Klucz sprzętowy FIDO2}
+\label{sec:mech-fido2}
+Osobne urządzenie (USB/NFC) z kluczem prywatnym, którego nie da się z niego wyjąć; podpisuje logowanie po PIN-ie i dotyku. Czynniki: posiadanie + wiedza. \cite{S1,S2,P1,P2,P3,P6,N1,A1}
+
+\paragraph{Analogia.} Klucz sprzętowy to sejf wielkości pendrive’a, który podpisuje tylko wtedy, gdy ktoś fizycznie go dotknie. Zdalny włamywacz może przejąć komputer, ale nie ma palca, żeby dotknąć klucza.
+
+\paragraph{Przebieg: logowanie kluczem.} Serwer wysyła wyzwanie, klucz podpisuje je po PIN-ie i dotyku, przeglądarka dokłada adres strony.
+\begingroup\footnotesize
+\begin{longtable}{@{}r p{0.2\linewidth} p{0.24\linewidth} p{0.46\linewidth}@{}}
+\toprule
+Nr & Kto $\rightarrow$ do kogo & Wiadomość / obliczenie & Co się dzieje \\
+\midrule
+\endhead
+1 & Serwer banku $\rightarrow$ Przeglądarka & \texttt{wyzwanie + rpId} & Serwer losuje wyzwanie i podaje swoją domenę: bank.example. \\
+2 & Przeglądarka $\rightarrow$ Klucz sprzętowy & \texttt{getAssertion} & Przeglądarka wysyła do klucza domenę (rpId) i skrót danych klienta z wyzwaniem (CTAP2). \\
+3 & Przeglądarka $\rightarrow$ Klucz sprzętowy & \texttt{PIN (zaszyfrowany)} & Ala wpisuje PIN klucza. Trafia do klucza zaszyfrowany i to klucz go sprawdza. \\
+4 & Ala $\rightarrow$ Klucz sprzętowy & \texttt{dotyk} & Klucz miga i czeka. Ala dotyka złotego pola — to dowód obecności człowieka. \\
+5 & Klucz sprzętowy & \texttt{ECDSA-P256(authData ‖ clientDataHash)} & Klucz podpisuje dane kluczem prywatnym, który nigdy go nie opuszcza. \\
+6 & Klucz sprzętowy $\rightarrow$ Przeglądarka & \texttt{podpis (asercja)} & Klucz oddaje podpis z flagami UP=1 i UV=1. \\
+7 & Przeglądarka $\rightarrow$ Serwer banku & \texttt{asercja + clientData} & Serwer sprawdza wyzwanie, adres strony i podpis. Sesja wydana. \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\paragraph{Warianty ataków.}
+\begin{description}
+\item[Phishing AitM] Pośrednik próbuje wyłudzić podpis klucza dla prawdziwego banku. Przeglądarka nie pozwala. \emph{Wynik: Atak zablokowany. Podpis jest związany z domeną, a domenę sprawdza przeglądarka, więc uwaga Ali nie jest potrzebna.}
+\item[Złośliwe oprogramowanie] Atakujący przejął komputer Ali i próbuje zalogować się w jej imieniu, gdy Ali nie ma przy biurku. \emph{Wynik: Atak zablokowany. Klucz wymaga fizycznego dotyku. Sesja po zalogowaniu wciąż wymaga ochrony.}
+\end{description}
+
+\subsection{Passkey}
+\label{sec:mech-passkey}
+Para kluczy kryptograficznych przypisana do jednej domeny; odblokowujesz ją palcem, twarzą albo PIN-em urządzenia. Czynniki: posiadanie + cecha. \cite{S1,S2,P4,P5,P6,R2,N1,A1,W3}
+
+\paragraph{Analogia.} Passkey działa jak pieczęć wykonana dla jednego adresu. Przeglądarka sama odczytuje adres strony i podaje go do podpisu. Na fałszywej stronie pieczęć po prostu nie pasuje — nie musisz niczego zauważać.
+
+\paragraph{Przebieg: logowanie passkeyem.} Serwer wysyła losowe wyzwanie, uwierzytelniacz podpisuje je kluczem przypisanym do bank.example.
+\begingroup\footnotesize
+\begin{longtable}{@{}r p{0.2\linewidth} p{0.24\linewidth} p{0.46\linewidth}@{}}
+\toprule
+Nr & Kto $\rightarrow$ do kogo & Wiadomość / obliczenie & Co się dzieje \\
+\midrule
+\endhead
+1 & Przeglądarka $\rightarrow$ Serwer banku & \texttt{rozpocznij logowanie} & Przeglądarka prosi serwer o rozpoczęcie logowania. \\
+2 & Serwer banku $\rightarrow$ Przeglądarka & \texttt{wyzwanie + rpId} & Serwer losuje jednorazowe wyzwanie i podaje swoją domenę: bank.example. \\
+3 & Przeglądarka $\rightarrow$ Uwierzytelniacz & \texttt{podpisz dla bank.example} & Przeglądarka sama wpisuje adres strony (origin) i przekazuje prośbę uwierzytelniaczowi. \\
+4 & Ala $\rightarrow$ Uwierzytelniacz & \texttt{odcisk palca} & Uwierzytelniacz prosi o potwierdzenie. Ala przykłada palec do czytnika. \\
+5 & Uwierzytelniacz & \texttt{ECDSA-P256(authData ‖ clientDataHash)} & Uwierzytelniacz podpisuje wyzwanie i domenę kluczem prywatnym. Klucz nie wychodzi z układu. \\
+6 & Uwierzytelniacz $\rightarrow$ Przeglądarka & \texttt{podpis (asercja)} & Uwierzytelniacz oddaje podpis z flagami UP=1, UV=1. \\
+7 & Przeglądarka $\rightarrow$ Serwer banku & \texttt{asercja + clientData} & Przeglądarka wysyła podpis i dane klienta z adresem strony. \\
+8 & Serwer banku & \texttt{challenge ✓  origin ✓  podpis ✓} & Wyzwanie się zgadza, adres się zgadza, podpis pasuje do klucza publicznego. Sesja wydana. \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\paragraph{Warianty ataków.}
+\begin{description}
+\item[Phishing AitM] Ten sam pośrednik co przy haśle próbuje przekazać logowanie passkeyem — i nie ma czego przechwycić. \emph{Wynik: Atak zablokowany. Klucz jest przypisany do domeny, a domenę sprawdza przeglądarka, więc uwaga Ali nie jest potrzebna.}
+\item[Kradzież sesji] Złośliwy program na komputerze Ali kradnie ciasteczko sesji już po udanym logowaniu passkeyem. \emph{Wynik: Atak udany, choć passkey zadziałał poprawnie: chroni logowanie, a ciasteczko sesji powstaje dopiero po nim.}
+\end{description}
+
+\subsection{Biometria}
+\label{sec:mech-biometria}
+Odcisk palca albo twarz sprawdzane lokalnie w urządzeniu; zgodność odblokowuje klucz, który podpisuje logowanie. Czynniki: cecha. \cite{N6,P13,P14,P15,P16,N1,S1}
+
+\paragraph{Analogia.} Telefon nie trzyma zdjęcia Twojego palca, tylko mapę charakterystycznych punktów linii papilarnych, zamkniętą w osobnym, odizolowanym układzie. Biometria nie jest jednak sekretem: odciski zostawiasz na każdej szklance i nie zmienisz ich jak hasła.
+
+\paragraph{Przebieg: odblokowanie odciskiem.} Odcisk jest porównywany ze wzorcem w enklawie; zgodność odblokowuje klucz, który podpisuje wyzwanie banku.
+\begingroup\footnotesize
+\begin{longtable}{@{}r p{0.2\linewidth} p{0.24\linewidth} p{0.46\linewidth}@{}}
+\toprule
+Nr & Kto $\rightarrow$ do kogo & Wiadomość / obliczenie & Co się dzieje \\
+\midrule
+\endhead
+1 & Ala $\rightarrow$ Telefon & \texttt{odcisk palca} & Aplikacja banku prosi o potwierdzenie. Ala przykłada palec do czytnika. \\
+2 & Telefon $\rightarrow$ Bezpieczna enklawa & \texttt{obraz z czujnika} & Obraz z czujnika idzie prosto do enklawy, z pominięciem systemu telefonu. \\
+3 & Bezpieczna enklawa & \texttt{PAD: żywy palec ✓} & Enklawa sprawdza, czy to żywy palec, a nie odlew albo wydruk. \\
+4 & Bezpieczna enklawa & \texttt{38 minucji, podobieństwo 0,93 > próg ✓} & Enklawa wyznacza minucje — zakończenia i rozwidlenia linii — i porównuje je ze wzorcem. \\
+5 & Bezpieczna enklawa & \texttt{podpis wyzwania (UV=1)} & Zgodność odblokowuje klucz prywatny, który podpisuje wyzwanie banku. \\
+6 & Bezpieczna enklawa $\rightarrow$ Serwer banku & \texttt{podpis, UV=1} & Do banku trafia podpis. Bank sprawdza go kluczem publicznym Ali. Gotowe. \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\paragraph{Warianty ataków.}
+\begin{description}
+\item[Sztuczny palec] Złodziej telefonu odtwarza odcisk Ali z odcisku na szkle i przykłada silikonowy odlew. \emph{Wynik: Zablokowany przez test żywotności. Skuteczność zależy od czujnika, a odcisku nie zmienisz jak hasła — dlatego biometria działa jako odblokowanie klucza, nie jako sekret.}
+\end{description}
+
+\subsection{Karta płatnicza}
+\label{sec:mech-karta}
+Chip EMV liczy przy każdej transakcji jednorazowy kryptogram; pasek magnetyczny powtarza wciąż te same dane. Czynniki: posiadanie. \cite{S5,A4,A5,A6,A7,A8,A9,X6,N3}
+
+\paragraph{Analogia.} Pasek magnetyczny to nagranie na taśmie: odtwarza zawsze tę samą piosenkę, więc łatwo ją przegrać na inną taśmę. Chip przy każdej płatności układa nowy podpis z kwoty, losowej liczby od terminala i licznika — nagranie z wczoraj dziś jest bezwartościowe.
+
+\paragraph{Przebieg: płatność zbliżeniowa (emv).} Chip liczy kryptogram ARQC z kwoty, liczby losowej terminala i licznika; bank sprawdza go swoim kluczem. Przykład w uproszczeniu (schemat jak Visa qVSDC).
+\begingroup\footnotesize
+\begin{longtable}{@{}r p{0.2\linewidth} p{0.24\linewidth} p{0.46\linewidth}@{}}
+\toprule
+Nr & Kto $\rightarrow$ do kogo & Wiadomość / obliczenie & Co się dzieje \\
+\midrule
+\endhead
+1 & Terminal $\rightarrow$ Karta Ali & \texttt{SELECT PPSE} & Pole radiowe terminala (13,56 MHz) zasila chip. Terminal pyta o aplikacje płatnicze. \\
+2 & Karta Ali $\rightarrow$ Terminal & \texttt{AID} & Karta odpowiada identyfikatorem aplikacji płatniczej. \\
+3 & Terminal $\rightarrow$ Karta Ali & \texttt{GET PROCESSING OPTIONS} & Terminal wysyła kwotę 150,00 zł i świeżą liczbę losową. \\
+4 & Karta Ali & \texttt{ATC=01A3; ARQC = MAC(kwota, UN, ATC)} & Chip zwiększa licznik transakcji i liczy kryptogram ARQC kluczem sesji. \\
+5 & Karta Ali $\rightarrow$ Terminal & \texttt{ARQC + ATC} & Karta oddaje kryptogram, licznik i zamaskowany numer karty. \\
+6 & Terminal $\rightarrow$ Sieć płatnicza & \texttt{autoryzacja 150 zł} & Terminal wysyła prośbę o autoryzację przez sieć płatniczą. \\
+7 & Sieć płatnicza $\rightarrow$ Bank Ali & \texttt{autoryzacja 150 zł} & Sieć przekazuje prośbę do banku, który wydał kartę. \\
+8 & Bank Ali & \texttt{ARQC ✓  ATC 01A3 > 01A2 ✓} & Moduł HSM banku liczy ten sam kryptogram i sprawdza, czy licznik jest nowy. \\
+9 & Bank Ali $\rightarrow$ Terminal & \texttt{zgoda (00)} & Bank odsyła zgodę. Terminal: „Zaakceptowano”. \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\paragraph{Warianty ataków.}
+\begin{description}
+\item[Skimming paska] Nakładka na czytnik kopiuje pasek magnetyczny; klon działa tam, gdzie terminal przyjmuje pasek. \emph{Wynik: Atak udany tam, gdzie przyjmuje się pasek. Dane statyczne da się skopiować — dlatego chip i wyłączanie paska.}
+\item[Powtórzenie nagrania] Atakujący nagrywa komunikację NFC przy płatności i odtwarza ją przy innym terminalu. \emph{Wynik: Atak zablokowany. Każdy kryptogram jest jednorazowy: licznik i liczba losowa terminala.}
+\item[Przekaźnik NFC (NGate)] Złośliwa aplikacja na telefonie Ali przekazuje na żywo komunikację z jej kartą do telefonu przestępcy przy bankomacie. \emph{Wynik: Atak udany. Kryptografia działała poprawnie — przekaźnik tylko przeniósł prawdziwą kartę na odległość.}
+\end{description}
+
+\subsection{MFA i ocena ryzyka}
+\label{sec:mech-mfa}
+Połączenie co najmniej dwóch niezależnych składników, często dobieranych na bieżąco według ryzyka logowania. Czynniki: wiedza + posiadanie + cecha. \cite{N1,N3,N4,P9,P10,P11,P12,A1}
+
+\paragraph{Analogia.} MFA to drzwi z kilkoma różnymi zamkami: złodziej, który podejrzał kod do jednego, nadal stoi przed drugim. Ale drzwi są tak mocne, jak najsłabsze wejście obok — jeśli jest furtka „zapomniałem klucza”, złodziej pójdzie właśnie tam.
+
+\paragraph{Przebieg: hasło + passkey na żądanie.} Silnik ryzyka widzi nowe urządzenie i przelew na nowy rachunek, więc serwer żąda drugiego składnika.
+\begingroup\footnotesize
+\begin{longtable}{@{}r p{0.2\linewidth} p{0.24\linewidth} p{0.46\linewidth}@{}}
+\toprule
+Nr & Kto $\rightarrow$ do kogo & Wiadomość / obliczenie & Co się dzieje \\
+\midrule
+\endhead
+1 & Przeglądarka $\rightarrow$ Serwer banku & \texttt{hasło + kontekst} & Ala loguje się hasłem. Serwer zbiera też kontekst: urządzenie, adres IP, porę. \\
+2 & Serwer banku $\rightarrow$ Ocena ryzyka & \texttt{oceń logowanie} & Silnik ryzyka: nowe urządzenie i nowy odbiorca. Ryzyko wysokie. \\
+3 & Serwer banku $\rightarrow$ Przeglądarka & \texttt{wyzwanie passkey} & Serwer prosi przeglądarkę o potwierdzenie passkeyem. \\
+4 & Ala $\rightarrow$ Uwierzytelniacz & \texttt{odcisk palca} & Ala przykłada palec. Uwierzytelniacz podpisuje wyzwanie dla bank.example. \\
+5 & Uwierzytelniacz $\rightarrow$ Serwer banku & \texttt{podpis (asercja)} & Podpis przechodzi weryfikację. Wiedza + posiadanie + cecha: sesja i zgoda na przelew. \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\paragraph{Warianty ataków.}
+\begin{description}
+\item[Credential stuffing] Atakujący loguje się hasłem Ali z wycieku innego serwisu. Hasło jest poprawne — i to za mało. \emph{Wynik: Atak zablokowany. Samo hasło przestało wystarczać — drugi składnik jest z innej kategorii.}
+\item[Wymuszony SMS zapasowy] Pośrednik phishingowy klika „Nie mam klucza — wyślij SMS” i obchodzi passkey słabszą ścieżką zapasową. \emph{Wynik: Atak udany. MFA jest tak silne, jak najsłabsza dostępna ścieżka — tu zapasowy SMS.}
+\end{description}
+
+\subsection{BLIK (rozszerzenie: kontekst polski)}
+\label{sec:mech-blik}
+Polski system płatności: 6-cyfrowy kod z aplikacji banku, ważny 2 minuty, a potem potwierdzenie kwoty w aplikacji. Czynniki: posiadanie + wiedza. \cite{X7,N3,N7,P9}
+
+\paragraph{Analogia.} Kod BLIK nie jest pieniędzmi ani numerem konta. To bilet ważny dwie minuty, który mówi systemowi: „ktoś chce zapłacić — zapytaj telefon Ali”. Pieniądze ruszą dopiero, gdy Ala przeczyta kwotę i odbiorcę i zatwierdzi.
+
+\paragraph{Przebieg: płatność kodem blik.} Ala generuje kod w aplikacji, wpisuje go w sklepie i zatwierdza w telefonie kwotę i odbiorcę.
+\begingroup\footnotesize
+\begin{longtable}{@{}r p{0.2\linewidth} p{0.24\linewidth} p{0.46\linewidth}@{}}
+\toprule
+Nr & Kto $\rightarrow$ do kogo & Wiadomość / obliczenie & Co się dzieje \\
+\midrule
+\endhead
+1 & Aplikacja banku $\rightarrow$ Bank Ali & \texttt{nowy kod BLIK} & Ala otwiera aplikację banku (PIN lub odcisk) i wybiera „BLIK”. \\
+2 & Bank Ali $\rightarrow$ System BLIK & \texttt{zarezerwuj kod} & Bank pobiera z systemu BLIK nowy kod ważny 2 minuty. \\
+3 & Bank Ali $\rightarrow$ Aplikacja banku & \texttt{kod 581 204} & Aplikacja pokazuje kod 581 204 i odliczanie 2:00. \\
+4 & Ala $\rightarrow$ Kasa sklepu & \texttt{581204} & Ala wpisuje kod w kasie sklepu internetowego. \\
+5 & Kasa sklepu $\rightarrow$ System BLIK & \texttt{kod + 150,00 zł} & Sklep wysyła do systemu BLIK kod, kwotę 150,00 zł i swoją nazwę. \\
+6 & System BLIK $\rightarrow$ Bank Ali & \texttt{autoryzuj 150,00 zł} & System BLIK wie, że kod należy do banku Ali, i przekazuje mu transakcję. \\
+7 & Bank Ali $\rightarrow$ Aplikacja banku & \texttt{150,00 zł · sklep?} & Telefon: „Zapłacić 150,00 zł dla Sklep Rowerowy?”. \\
+8 & Ala $\rightarrow$ Aplikacja banku & \texttt{PIN aplikacji} & Ala czyta kwotę i odbiorcę, zatwierdza PIN-em aplikacji. \\
+9 & Aplikacja banku $\rightarrow$ Bank Ali & \texttt{zgoda + podpis} & Bank przyjmuje podpisane potwierdzenie i obciąża konto. \\
+10 & System BLIK $\rightarrow$ Kasa sklepu & \texttt{opłacono} & System BLIK potwierdza płatność sklepowi. Gotowe. \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\paragraph{Warianty ataków.}
+\begin{description}
+\item[Oszustwo „na BLIKa”] Oszust z przejętego konta znajomego prosi o „pożyczkę” kodem BLIK i wypłaca pieniądze z bankomatu. \emph{Wynik: Atak udany, choć technika zadziałała bez zarzutu: bank pokazał kwotę i miejsce. Zawiódł pośpiech — potwierdzenie trzeba przeczytać.}
+\end{description}

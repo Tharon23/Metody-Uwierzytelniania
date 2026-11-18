@@ -1,0 +1,122 @@
+import type { Mechanism } from '../types';
+
+export const biometria: Mechanism = {
+  id: 'biometria',
+  num: 7,
+  name: 'Biometria',
+  short: 'Biometria',
+  factors: ['cecha'],
+  tagline: 'Odcisk palca albo twarz sprawdzane lokalnie w urządzeniu; zgodność odblokowuje klucz, który podpisuje logowanie.',
+  analogy:
+    'Telefon nie trzyma zdjęcia Twojego palca, tylko mapę charakterystycznych punktów linii papilarnych, zamkniętą w osobnym, odizolowanym układzie. Biometria nie jest jednak sekretem: odciski zostawiasz na każdej szklance i nie zmienisz ich jak hasła.',
+  facts: {
+    aal: 'Tylko jako element innego uwierzytelniacza (odblokowanie klucza); sama nie jest uwierzytelniaczem',
+    psd2: 'Cecha (inherence)',
+    phishingResistant: 'częściowo',
+    najlepiej: 'Lokalne odblokowanie passkeya lub aplikacji banku; wygoda bez wysyłania danych biometrycznych na serwer.',
+    slabosci: 'Ataki prezentacji (sztuczny palec, zdjęcie), nie da się jej zmienić po wycieku, błędy dopasowania (FAR/FRR).',
+  },
+  actors: [
+    { id: 'ala', kind: 'osoba', label: 'Ala', at: [0, 0] },
+    { id: 'telefon', kind: 'telefon', label: 'Telefon', note: 'czytnik linii papilarnych', at: [2.6, 0] },
+    { id: 'chip', kind: 'chip', label: 'Bezpieczna enklawa', note: 'TEE / Secure Enclave', at: [2.6, 2.8] },
+    { id: 'serwer', kind: 'serwer', label: 'Serwer banku', note: 'bank.example', at: [7, 0] },
+  ],
+  variants: [
+    {
+      id: 'normalny',
+      name: 'Odblokowanie odciskiem',
+      kind: 'normalny',
+      summary: 'Odcisk jest porównywany ze wzorcem w enklawie; zgodność odblokowuje klucz, który podpisuje wyzwanie banku.',
+      initial: {
+        tokens: [{ at: 'chip', label: 'wzorzec odcisku', tone: 'warn' }, { at: 'chip', label: 'klucz prywatny', tone: 'warn' }],
+      },
+      steps: [
+        {
+          id: 'palec', title: 'Ala przykłada palec',
+          caption: 'Aplikacja banku prosi o potwierdzenie. Ala przykłada palec do czytnika.',
+          detail: 'Czujnik (pojemnościowy, optyczny albo ultradźwiękowy) robi obraz linii papilarnych.',
+          from: 'ala', to: 'telefon',
+          msg: { label: 'odcisk palca', channel: 'czlowiek' },
+        },
+        {
+          id: 'obraz', title: 'Obraz trafia do enklawy',
+          caption: 'Obraz z czujnika idzie prosto do enklawy, z pominięciem systemu telefonu.',
+          detail: 'Enklawa to odizolowany procesor z własną pamięcią. Nawet aplikacje z uprawnieniami systemowymi nie widzą obrazu odcisku.',
+          from: 'telefon', to: 'chip',
+          msg: { label: 'obraz z czujnika', channel: 'wewn', tone: 'warn' },
+        },
+        {
+          id: 'pad', title: 'Test żywotności',
+          caption: 'Enklawa sprawdza, czy to żywy palec, a nie odlew albo wydruk.',
+          detail: 'Wykrywanie ataków prezentacji (PAD, norma ISO/IEC 30107) analizuje np. właściwości skóry. W uproszczeniu: skuteczność zależy od czujnika.',
+          at: 'chip', calc: 'PAD: żywy palec ✓',
+          result: 'ok',
+        },
+        {
+          id: 'minucje', title: 'Porównanie minucji',
+          caption: 'Enklawa wyznacza minucje — zakończenia i rozwidlenia linii — i porównuje je ze wzorcem.',
+          detail: 'Wynik to stopień podobieństwa, nie pewność. Próg ustala kompromis między fałszywym przyjęciem (FAR) a fałszywym odrzuceniem (FRR).',
+          at: 'chip', calc: '38 minucji, podobieństwo 0,93 > próg ✓',
+          result: 'ok',
+        },
+        {
+          id: 'podpis', title: 'Klucz odblokowany',
+          caption: 'Zgodność odblokowuje klucz prywatny, który podpisuje wyzwanie banku.',
+          detail: 'Biometria nie jedzie do banku. Bank dostaje tylko podpis i flagę UV=1: „użytkownik zweryfikowany lokalnie”.',
+          at: 'chip', calc: 'podpis wyzwania (UV=1)',
+          result: 'ok',
+        },
+        {
+          id: 'asercja', title: 'Podpis do banku',
+          caption: 'Do banku trafia podpis. Bank sprawdza go kluczem publicznym Ali. Gotowe.',
+          detail: 'Dzięki temu wyciek bazy banku nie ujawnia żadnych danych biometrycznych.',
+          from: 'chip', to: 'serwer',
+          msg: { label: 'podpis, UV=1', channel: 'tls', tone: 'ok' },
+          calc: 'podpis ✓',
+          gives: [{ at: 'telefon', label: 'sesja', tone: 'ok' }],
+          result: 'ok',
+        },
+      ],
+    },
+    {
+      id: 'prezentacja',
+      name: 'Sztuczny palec',
+      kind: 'atak',
+      summary: 'Złodziej telefonu odtwarza odcisk Ali z odcisku na szkle i przykłada silikonowy odlew.',
+      actors: [{ id: 'oszust', kind: 'osoba', label: 'Złodziej', note: 'silikonowy odlew', at: [0, 3], hostile: true }],
+      hide: ['ala'],
+      initial: { tokens: [{ at: 'chip', label: 'wzorzec odcisku', tone: 'warn' }, { at: 'oszust', label: 'odlew palca', tone: 'attack' }] },
+      bet: {
+        question: 'Złodziej ma bardzo dokładny odlew palca Ali. Czy odblokuje telefon?',
+        options: ['Tak, linie się zgadzają', 'Nie, jeśli czujnik wykryje sztuczny palec'],
+        correct: 1,
+      },
+      steps: [
+        {
+          id: 'odlew', title: 'Przyłożenie odlewu',
+          caption: 'Złodziej przykłada silikonowy odlew zrobiony ze śladu na ekranie.',
+          detail: 'Ślad odcisku można sfotografować i odtworzyć. Biometria nie jest sekretem — to cecha, którą zostawiamy wszędzie.',
+          from: 'oszust', to: 'telefon',
+          msg: { label: 'sztuczny palec', channel: 'czlowiek', tone: 'attack' },
+        },
+        {
+          id: 'obraz', title: 'Obraz do enklawy',
+          caption: 'Czujnik robi obraz. Linie papilarne wyglądają jak u Ali.',
+          detail: 'Samo porównanie wzoru mogłoby dać zgodność. Dlatego najpierw działa test żywotności.',
+          from: 'telefon', to: 'chip',
+          msg: { label: 'obraz z czujnika', channel: 'wewn', tone: 'attack' },
+        },
+        {
+          id: 'pad', title: 'Test żywotności',
+          caption: 'Test żywotności odrzuca odlew: brak cech żywej skóry.',
+          detail: 'Dobre czujniki wykrywają większość odlewów, ale nie wszystkie. Po kilku nieudanych próbach telefon żąda PIN-u — biometria nie jest jedyną bramą.',
+          at: 'chip', calc: 'PAD: materiał nieożywiony ✗',
+          result: 'blocked',
+        },
+      ],
+      verdict: { outcome: 'zablokowany', text: 'Zablokowany przez test żywotności. Skuteczność zależy od czujnika, a odcisku nie zmienisz jak hasła — dlatego biometria działa jako odblokowanie klucza, nie jako sekret.' },
+    },
+  ],
+  sources: ['N6', 'P13', 'P14', 'P15', 'P16', 'N1', 'S1'],
+};

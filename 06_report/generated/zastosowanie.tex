@@ -1,0 +1,21 @@
+% Plik generowany: npm --prefix 04_app run gen:report — nie edytować ręcznie.
+\begingroup\small
+\begin{longtable}{@{}p{0.16\linewidth} p{0.4\linewidth} p{0.36\linewidth}@{}}
+\caption{Najefektywniejsze zastosowanie i główne słabości mechanizmów.}\label{tab:zastosowanie}\\
+\toprule
+Mechanizm & Gdzie i po co & Główne słabości \\
+\midrule
+\endhead
+Hasło & Jako jeden z dwóch czynników albo w serwisach niskiego ryzyka; z menedżerem haseł i unikalnym hasłem na serwis. & Phishing, powtarzanie haseł w wielu serwisach, słabe hasła łamane po wycieku bazy. \\
+SMS OTP & Jako przejściowy drugi składnik tam, gdzie nie ma nic lepszego; nie do kont o wysokiej wartości. & SIM-swap, phishing w czasie rzeczywistym, przechwycenie w sieci (SS7), podgląd na zablokowanym ekranie. \\
+TOTP (aplikacja) & Jako drugi składnik zamiast SMS: działa offline i nie zależy od operatora. & Phishing w czasie rzeczywistym, kradzież sekretu (np. z niezaszyfrowanej kopii zapasowej), utrata telefonu bez kopii. \\
+Push + number matching & Firmy i banki z własną aplikacją; zawsze z dopasowaniem liczby i kontekstem (kto, skąd, co). & Zmęczenie powiadomieniami (bez dopasowania liczby), socjotechnika przez telefon, phishing w czasie rzeczywistym. \\
+Klucz sprzętowy FIDO2 & Konta uprzywilejowane i pracownicy firm (B2B), administratorzy, osoby szczególnie narażone. & Koszt i logistyka (zakup, zapasowy klucz), zgubienie, słabsze ścieżki odzyskiwania konta. \\
+Passkey & Logowanie klientów (B2C) zamiast hasła i SMS; w firmie w wersji związanej z urządzeniem. & Odzyskiwanie konta, przejęcie konta chmurowego (passkey synchronizowany), kradzież sesji po zalogowaniu. \\
+Biometria & Lokalne odblokowanie passkeya lub aplikacji banku; wygoda bez wysyłania danych biometrycznych na serwer. & Ataki prezentacji (sztuczny palec, zdjęcie), nie da się jej zmienić po wycieku, błędy dopasowania (FAR/FRR). \\
+Karta płatnicza & Płatności w sklepie (chip, zbliżeniowo); pasek magnetyczny tylko jako przestarzała rezerwa. & Skimming i klonowanie paska, przekaźnik NFC (relay), obejścia PIN w niektórych konfiguracjach, phishing danych karty online. \\
+MFA i ocena ryzyka & Wszędzie, gdzie stawka jest wysoka; z odpornym na phishing składnikiem i bez słabych ścieżek zapasowych. & Słabe metody zapasowe (SMS, pytania), zmęczenie użytkownika, kradzież sesji po zalogowaniu. \\
+BLIK & Płatności w internecie i wypłaty w Polsce (C2C, B2C) bez podawania danych karty. & Socjotechnika: „pożycz na BLIKa”, fałszywe „odbieranie płatności”, zatwierdzanie bez czytania. \\
+\bottomrule
+\end{longtable}
+\endgroup

@@ -1,0 +1,89 @@
+@font-face {
+  font-family: 'Symbole';
+  src: url('../assets/fonts/symbole-jbm.woff2') format('woff2');
+  font-weight: 100 800;
+  font-display: swap;
+  unicode-range: U+2016, U+2070-209F, U+2190-21FF, U+2200-22FF, U+2300-23FF, U+25A0-25FF, U+2713-2717;
+}
+
+/* Tokeny: 02_design-language/output/design-language.md */
+
+:root,
+:root[data-theme='dark'] {
+  --paper: #0f2d4d;
+  --paper-deep: #0a2139;
+  --paper-raise: #143759;
+  --ink: #e8f1fa;
+  --ink-soft: #9db8d3;
+  --ink-faint: #5f7f9f;
+  --grid: #1a3e63;
+  --rule: #24496f;
+  --ok: #7ee2b8;
+  --warn: #ffc46b;
+  --attack: #ff7a6b;
+
+  --face-top: #1d4670;
+  --face-left: #163a5f;
+  --face-right: #11304f;
+  --face-top-h: #4a2b3a;
+  --face-left-h: #3d2433;
+  --face-right-h: #321e2c;
+  --screen: #0b2440;
+  --pill-bg: #0b2440;
+  --shadow-1: 0 12px 32px rgb(2 12 26 / 0.42);
+  --shadow-2: 0 24px 64px rgb(2 12 26 / 0.5);
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --paper: #f4f7fa;
+  --paper-deep: #e8eef4;
+  --paper-raise: #ffffff;
+  --ink: #123a63;
+  --ink-soft: #5b7a99;
+  --ink-faint: #9bb0c5;
+  --grid: #dce5ee;
+  --rule: #cfdbe7;
+  --ok: #0f8a5f;
+  --warn: #b86e00;
+  --attack: #c8372d;
+
+  --face-top: #ffffff;
+  --face-left: #eaf0f6;
+  --face-right: #dbe5ef;
+  --face-top-h: #fff4f2;
+  --face-left-h: #fbe4e0;
+  --face-right-h: #f5d3cd;
+  --screen: #e3ecf5;
+  --pill-bg: #ffffff;
+  --shadow-1: 0 12px 32px rgb(70 98 140 / 0.22);
+  --shadow-2: 0 24px 64px rgb(70 98 140 / 0.3);
+  color-scheme: light;
+}
+
+:root {
+  /* IBM Plex: dopracowane polskie znaki; symbole (✓ ≠ → ⌊) z podzbioru JetBrains Mono, żeby nic nie spadało do fontów systemowych */
+  --font-ui: 'IBM Plex Sans', 'Symbole', system-ui, sans-serif;
+  --font-cond: 'IBM Plex Sans Condensed', 'IBM Plex Sans', 'Symbole', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Symbole', ui-monospace, monospace;
+
+  /* Skala modułowa: baza 16 px, stosunek 1,25 (tercja wielka). Dół skali stały, nic poniżej 14 px;
+     płynne (clamp z członem rem — działa przy powiększeniu) tylko tytuły. */
+  --fs-display: clamp(2.4375rem, 1.6rem + 2.4vw, 3.8125rem); /* 39 → 61 */
+  --fs-title: clamp(1.5625rem, 1.1rem + 1.2vw, 2.4375rem);   /* 25 → 39 */
+  --fs-lead: 1.25rem;    /* 20 */
+  --fs-body: 1rem;       /* 16 */
+  --fs-small: 0.875rem;  /* 14 — metadane, podpisy, etykiety */
+  --fs-micro: 0.875rem;  /* 14 — dolna granica czytelności */
+
+  /* Ruch interfejsu (pomiar design-extract: wspólne czasy i krzywe) */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.5, 0, 0.75, 0);
+  --ease-move: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-xs: 120ms;
+  --dur-sm: 180ms;
+  --dur-md: 300ms;
+  --dur-lg: 420ms;
+  --dur-slide: 550ms;
+  --radius: 6px;
+}

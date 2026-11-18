@@ -1,0 +1,41 @@
+{
+  "name": "jak-sie-logujemy",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc -b",
+    "video:studio": "remotion studio src/video/index.ts",
+    "video:teaser": "remotion render src/video/index.ts Zwiastun ../05_video/output/zwiastun.mp4",
+    "video:full": "remotion render src/video/index.ts Pokaz ../05_video/output/pokaz.mp4",
+    "video:still": "remotion still src/video/index.ts Zwiastun ../05_video/output/kadr.png --frame=900",
+    "gen:km2": "tsx scripts/gen-km2.ts",
+    "gen:report": "tsx scripts/gen-report.ts",
+    "bench": "tsx scripts/bench-client.tsx"
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@remotion/cli": "^4.0.545",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "remotion": "^4.0.545"
+  },
+  "devDependencies": {
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "@fontsource/ibm-plex-sans-condensed": "^5.3.0",
+    "@types/jsdom": "^30.0.0",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "jsdom": "^31.0.1",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
+  }
+}

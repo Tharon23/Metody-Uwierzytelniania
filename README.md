@@ -13,9 +13,9 @@ Kamil Szkarłat (koordynator) · Jakub Szkaradek · Bartłomiej Ząbek · Rados�
 | KM | Termin | Zakres | Status |
 |----|--------|--------|--------|
 | **KM1** | 08.11 | Baza źródłowa + założenia + szczegółowy plan | ✅ gotowe — [`dokumenty/KM1-Baza-Zrodel.pdf`](dokumenty/KM1-Baza-Zrodel.pdf) |
-| **KM2** | 13.12 | Analiza porównawcza + matryca zagrożeń | ⏳ |
-| **KM3** | 15.01 | Prototyp wizualizacji + wersja robocza raportu | ⏳ |
-| **KM4** | 23.01 | Raport końcowy + prezentacja | ⏳ |
+| **KM2** | 13.12 | Analiza porównawcza + matryca zagrożeń | ✅ do przeglądu — [`06_report/output/km2-matryca.pdf`](06_report/output/km2-matryca.pdf), [`03_content/output/KM2-matryca.md`](03_content/output/KM2-matryca.md) |
+| **KM3** | 15.01 | Prototyp wizualizacji + wersja robocza raportu | ✅ do przeglądu — aplikacja [`04_app/`](04_app/), zwiastun [`05_video/output/zwiastun.mp4`](05_video/output/zwiastun.mp4) |
+| **KM4** | 23.01 | Raport końcowy + prezentacja | 📝 wersja do przeglądu — [`06_report/output/raport.pdf`](06_report/output/raport.pdf) |
 
 ## Struktura repozytorium
 
@@ -29,13 +29,39 @@ Kamil Szkarłat (koordynator) · Jakub Szkaradek · Bartłomiej Ząbek · Rados�
 ├── zrodla/
 │   ├── README.md                     ← indeks źródeł fizycznych + lista do pobrania ręcznie
 │   └── open-access/                  ← PDF-y wolne do redystrybucji (NIST, USENIX, ENISA, OA)
-└── wizualizacja/
-    └── INSPIRACJE.md                 ← analiza referencji pod moduł demo (zadanie E)
+├── wizualizacja/
+│   └── INSPIRACJE.md                 ← analiza referencji pod moduł demo (zadanie E)
+├── CONTEXT.md                        ← przebieg etapów
+├── 01_research/                      ← research zewnętrzny i jego ocena
+├── 02_design-language/               ← język wizualny aplikacji
+├── 03_content/                       ← dane: mechanizmy, przebiegi, matryca KM2 (jedno źródło prawdy)
+├── 04_app/                           ← aplikacja „Jak się logujemy?” (Vite + React + TypeScript) + kompozycje wideo
+├── 05_video/                         ← wyrenderowane wideo (Remotion)
+└── 06_report/                        ← raport końcowy i KM2 (LaTeX), tabele generowane z danych
 ```
+
+## Aplikacja „Jak się logujemy?”
+
+Interaktywna wizualizacja 10 mechanizmów (9 z KM1 + BLIK) z wariantami ataków, matrycą porównawczą i trybem pokazu na osobny ekran. Działa statycznie (GitHub Pages) i offline.
+
+```bash
+cd 04_app
+npm install
+npm run dev        # http://localhost:5173
+npm test           # testy danych, matrycy i TOTP (wektory RFC)
+npm run build      # statyczny build w 04_app/dist
+```
+
+- `#/` — spis arkuszy · `#/m/<mechanizm>/<wariant>` — arkusz (klawisz `?` pokazuje skróty) · `#/porownanie` — matryca i ranking · `#/autoplay` — pokaz (`?kiosk` blokuje wygaszanie ekranu) · `#/o-projekcie` — źródła i podziękowania.
+- Wideo: `npm run video:teaser` / `npm run video:full` (Remotion, te same sceny co aplikacja).
+- Raport: `npm run gen:report`, potem `latexmk -lualatex -outdir=output raport.tex` w `06_report/`.
+- Strona: https://tharon23.github.io/Metody-Uwierzytelniania/ — workflow `.github/workflows/pages.yml` po każdym pushu na `main` uruchamia testy, buduje aplikację i aktualizuje gałąź `gh-pages` (jednorazowo w ustawieniach: Settings → Pages → Deploy from a branch → `gh-pages`, `/ (root)`).
+
+Inspirowane [Protocol Explorer](https://protocol-explorer-alpha.vercel.app) Diluma Sanjayi.
 
 ## Badane mechanizmy
 
-Hasło (baseline) · SMS OTP · TOTP (aplikacje) · Push (+ number matching) · klucze FIDO2/WebAuthn · passkeys (device-bound / synced) · biometria · karty zbliżeniowe/magnetyczne · MFA. Kontekst relacji **B2B / B2C / C2C**.
+Hasło (baseline) · SMS OTP · TOTP (aplikacje) · Push (+ number matching) · klucze FIDO2/WebAuthn · passkeys (device-bound / synced) · biometria · karty zbliżeniowe/magnetyczne · MFA · BLIK (rozszerzenie: kontekst polski). Kontekst relacji **B2B / B2C / C2C**.
 
 ## Osie oceny (matryca KM2)
 

@@ -1,0 +1,290 @@
+% Plik generowany: npm --prefix 04_app run gen:report — nie edytować ręcznie.
+\subsection*{1. Hasło}
+\begingroup\small
+\begin{longtable}{@{}p{0.2\linewidth}c p{0.56\linewidth}l@{}}
+\toprule
+Kryterium & Ocena & Uzasadnienie & Źródła \\
+\midrule
+\endhead
+A1 Phishing / AitM & 1 & Hasło działa na każdej stronie, na której zostanie wpisane; pośrednik przekazuje je bez przeszkód. & \cite{A1,P6} \\
+A2 Przechwycenie kanału & 3 & TLS chroni hasło w drodze, ale po stronie serwera jest ono przez chwilę jawne. & \cite{N1,N4} \\
+A3 Powtórzenie & 1 & Przechwycone hasło działa wielokrotnie aż do zmiany. & \cite{P6,X1} \\
+A4 SIM-swap & 4 & Nie zależy od numeru telefonu, o ile reset hasła nie idzie przez SMS. & \cite{N1,P11} \\
+A5 Socjotechnika & 1 & Hasło można po prostu wyłudzić lub podyktować. & \cite{N5,P6} \\
+A6 Wyciek z serwera & 2 & Sól i Argon2id spowalniają łamanie, ale słabe i powtarzane hasła padają po wycieku. & \cite{X3,X4} \\
+A7 Utrata urządzenia & 4 & Nie jest związane z urządzeniem; ryzyko tylko przy hasłach zapisanych bez blokady. & \cite{N1} \\
+B1 Koszt & 5 & Brak sprzętu i opłat; standard każdego frameworka. & \cite{X1,P7} \\
+B2 Interoperacyjność & 5 & Działa wszędzie, na każdym urządzeniu. & \cite{X1} \\
+B3 Skalowalność & 5 & Skaluje się bez logistyki; koszty to głównie obsługa resetów. & \cite{X1} \\
+C1 Tarcie & 4 & Jeden krok, ale wymaga pamiętania lub menedżera haseł. & \cite{P8,X1} \\
+C2 Czas & 4 & Kilka sekund z menedżerem haseł, dłużej bez niego. & \cite{P1} \\
+C3 Dostępność i odzyskiwanie & 4 & Łatwe odzyskanie przez e-mail, choć sam reset bywa słabym punktem. & \cite{P11} \\
+C4 Znajomość & 5 & Najlepiej znana metoda. & \cite{P8,X1} \\
+D1 NIST AAL & AAL1 (2) & Samo hasło to AAL1. & \cite{N1} \\
+D2 PSD2 SCA & nie (1) & Jeden element (wiedza) — nie spełnia SCA. & \cite{N3} \\
+D3 Odporność na phishing & nie (1) & Nie jest odporne na phishing. & \cite{N1,P6} \\
+D4 Dopasowanie B2B/B2C/C2C & baza dla B2B/B2C/C2C (2) & Wszędzie jako baza, ale nie jako jedyny składnik przy transakcjach. & \cite{N3,N4} \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\subsection*{2. SMS OTP}
+\begingroup\small
+\begin{longtable}{@{}p{0.2\linewidth}c p{0.56\linewidth}l@{}}
+\toprule
+Kryterium & Ocena & Uzasadnienie & Źródła \\
+\midrule
+\endhead
+A1 Phishing / AitM & 1 & Pośrednik przekazuje kod w czasie jego ważności. & \cite{A1,A3} \\
+A2 Przechwycenie kanału & 2 & SMS nie jest szyfrowany end-to-end; możliwe przechwycenie w sieci (SS7) lub przez złośliwe aplikacje. & \cite{A3,N1} \\
+A3 Powtórzenie & 4 & Kod jednorazowy i krótko ważny. & \cite{N1,P7} \\
+A4 SIM-swap & 1 & Przejęcie numeru (SIM-swap) daje dostęp do kodów. & \cite{X2,A3,X8} \\
+A5 Socjotechnika & 2 & Kod łatwo podyktować „pracownikowi banku”. & \cite{A3,P9} \\
+A6 Wyciek z serwera & 4 & Serwer przechowuje tylko numer telefonu; kody są ulotne. & \cite{N1} \\
+A7 Utrata urządzenia & 2 & Kod często widać na zablokowanym ekranie. & \cite{A3} \\
+B1 Koszt & 3 & Opłaty za każdą wiadomość, rosnące przy ruchu międzynarodowym. & \cite{P7,A3} \\
+B2 Interoperacyjność & 5 & Działa na każdym telefonie komórkowym. & \cite{P7,P8} \\
+B3 Skalowalność & 3 & Zależność od operatorów i opóźnień doręczenia. & \cite{P7} \\
+C1 Tarcie & 2 & Oczekiwanie na SMS i przepisywanie kodu. & \cite{P8,P12} \\
+C2 Czas & 2 & Kilkanaście sekund do minut, zależnie od doręczenia. & \cite{P8} \\
+C3 Dostępność i odzyskiwanie & 4 & Nie wymaga smartfona; łatwa zmiana numeru. & \cite{P7,P9} \\
+C4 Znajomość & 5 & Bardzo dobrze znana metoda. & \cite{P8,P9} \\
+D1 NIST AAL & AAL2 (restricted) (2) & AAL2, ale NIST oznacza ją jako „restricted”. & \cite{N1} \\
+D2 PSD2 SCA & tak (z hasłem) (4) & Z hasłem spełnia SCA; kwota może być w treści SMS. & \cite{N3} \\
+D3 Odporność na phishing & nie (1) & Nie jest odporny na phishing. & \cite{N1,A1} \\
+D4 Dopasowanie B2B/B2C/C2C & B2C (przejściowo) (2) & B2C przejściowo; odchodzi się od niego w bankowości. & \cite{N1,R2} \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\subsection*{3. TOTP (aplikacja)}
+\begingroup\small
+\begin{longtable}{@{}p{0.2\linewidth}c p{0.56\linewidth}l@{}}
+\toprule
+Kryterium & Ocena & Uzasadnienie & Źródła \\
+\midrule
+\endhead
+A1 Phishing / AitM & 1 & Kod jest ważny ok. 30–90 s; pośrednik zdąży go użyć. & \cite{A1,S3} \\
+A2 Przechwycenie kanału & 4 & Sekret nie krąży po sieci po rejestracji; kod idzie przez TLS. & \cite{S3,N1} \\
+A3 Powtórzenie & 4 & Kod ważny tylko w oknie czasowym; poprawna implementacja odrzuca ponowne użycie. & \cite{S3,S4} \\
+A4 SIM-swap & 5 & Nie zależy od numeru telefonu. & \cite{S3,P7} \\
+A5 Socjotechnika & 2 & Kod można podyktować oszustowi. & \cite{P9,A1} \\
+A6 Wyciek z serwera & 2 & Serwer przechowuje wspólny sekret; jego wyciek pozwala liczyć kody. & \cite{S3,N1} \\
+A7 Utrata urządzenia & 3 & Aplikacja często nie ma osobnej blokady. & \cite{N4} \\
+B1 Koszt & 5 & Darmowe aplikacje, otwarty standard. & \cite{S3,P7} \\
+B2 Interoperacyjność & 4 & Standard RFC obsługiwany przez wiele aplikacji. & \cite{S3} \\
+B3 Skalowalność & 5 & Brak opłat za wiadomości i zależności od operatora. & \cite{S3} \\
+C1 Tarcie & 2 & Otwarcie aplikacji i przepisanie kodu. & \cite{P8,P4} \\
+C2 Czas & 3 & Kilka do kilkunastu sekund. & \cite{P8} \\
+C3 Dostępność i odzyskiwanie & 2 & Utrata telefonu bez kopii sekretu blokuje dostęp. & \cite{P11} \\
+C4 Znajomość & 3 & Mniej znana niż SMS. & \cite{P8,P9} \\
+D1 NIST AAL & AAL2 (3) & AAL2. & \cite{N1} \\
+D2 PSD2 SCA & częściowo (3) & Z hasłem spełnia SCA przy logowaniu; brak powiązania z kwotą transakcji. & \cite{N3} \\
+D3 Odporność na phishing & nie (1) & Nie jest odporny na phishing. & \cite{N1,A1} \\
+D4 Dopasowanie B2B/B2C/C2C & B2B, B2C (3) & B2B i B2C jako drugi składnik. & \cite{N4,P7} \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\subsection*{4. Push + number matching}
+\begingroup\small
+\begin{longtable}{@{}p{0.2\linewidth}c p{0.56\linewidth}l@{}}
+\toprule
+Kryterium & Ocena & Uzasadnienie & Źródła \\
+\midrule
+\endhead
+A1 Phishing / AitM & 2 & Dopasowanie liczby nie blokuje pośrednika, który pokazuje ofierze prawdziwą liczbę. & \cite{A1,X5} \\
+A2 Przechwycenie kanału & 4 & Kanał TLS, odpowiedź podpisana kluczem urządzenia. & \cite{X9,P10} \\
+A3 Powtórzenie & 5 & Każde potwierdzenie dotyczy jednej próby logowania. & \cite{X9} \\
+A4 SIM-swap & 4 & Nie zależy od SMS, chyba że aktywacja na nowym telefonie idzie przez SMS. & \cite{P11,X5} \\
+A5 Socjotechnika & 3 & Dopasowanie liczby zatrzymuje push bombing; zostaje socjotechnika przez telefon. & \cite{A2,X5,X9} \\
+A6 Wyciek z serwera & 5 & Serwer zna tylko klucz publiczny urządzenia. & \cite{X9} \\
+A7 Utrata urządzenia & 4 & Aplikacja chroniona PIN-em lub biometrią. & \cite{P10} \\
+B1 Koszt & 3 & Wymaga własnej aplikacji albo dostawcy tożsamości. & \cite{P7,P10} \\
+B2 Interoperacyjność & 2 & Zależy od aplikacji konkretnego dostawcy. & \cite{P10} \\
+B3 Skalowalność & 4 & Dobrze skaluje się w firmach i bankach z aplikacją. & \cite{P10} \\
+C1 Tarcie & 3 & Dopasowanie liczby dodaje krok, ale bez przepisywania długiego kodu. & \cite{X5,X9} \\
+C2 Czas & 3 & Kilka sekund, zależnie od dostarczenia powiadomienia. & \cite{X9} \\
+C3 Dostępność i odzyskiwanie & 3 & Wymaga smartfona; zmiana telefonu wymaga ponownej aktywacji. & \cite{P11} \\
+C4 Znajomość & 4 & Powszechne w bankowości mobilnej. & \cite{P9} \\
+D1 NIST AAL & AAL2 (3) & AAL2. & \cite{N1} \\
+D2 PSD2 SCA & tak (5) & Spełnia SCA, w aplikacji można pokazać kwotę i odbiorcę. & \cite{N3} \\
+D3 Odporność na phishing & nie (1) & Nie jest odporny na phishing AitM. & \cite{N1,X5} \\
+D4 Dopasowanie B2B/B2C/C2C & B2B, B2C (4) & B2B (pracownicy) i B2C (banki). & \cite{P10,X9} \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\subsection*{5. Klucz sprzętowy FIDO2}
+\begingroup\small
+\begin{longtable}{@{}p{0.2\linewidth}c p{0.56\linewidth}l@{}}
+\toprule
+Kryterium & Ocena & Uzasadnienie & Źródła \\
+\midrule
+\endhead
+A1 Phishing / AitM & 5 & Podpis związany z domeną; przeglądarka egzekwuje origin. & \cite{S1,A1,P6} \\
+A2 Przechwycenie kanału & 5 & Kanał niczego nie zdradza: podpis jest jednorazowy i związany z domeną. & \cite{S1,S2} \\
+A3 Powtórzenie & 5 & Wyzwanie serwera i licznik podpisów uniemożliwiają powtórzenie. & \cite{S1,S2} \\
+A4 SIM-swap & 5 & Nie zależy od telefonu. & \cite{P6} \\
+A5 Socjotechnika & 4 & Nie ma kodu do podyktowania; zostaje wyłudzenie rejestracji lub odzyskiwania. & \cite{P6,P11} \\
+A6 Wyciek z serwera & 5 & Serwer przechowuje tylko klucze publiczne. & \cite{P6,S1} \\
+A7 Utrata urządzenia & 4 & Klucz bez PIN-u jest bezużyteczny; blokada po 8 próbach. & \cite{S2} \\
+B1 Koszt & 1 & Zakup sprzętu dla każdego użytkownika, zwykle dwóch sztuk. & \cite{P3,P7} \\
+B2 Interoperacyjność & 4 & WebAuthn w głównych przeglądarkach; wymaga USB/NFC. & \cite{S1,P2} \\
+B3 Skalowalność & 2 & Logistyka dystrybucji i wymiany kluczy. & \cite{P3} \\
+C1 Tarcie & 3 & Podłączenie, PIN i dotyk. & \cite{P1,P2} \\
+C2 Czas & 3 & Kilka sekund; szybsze bez PIN-u. & \cite{P1} \\
+C3 Dostępność i odzyskiwanie & 2 & Zgubiony klucz wymaga zapasowego klucza lub procedury odzyskiwania. & \cite{P3,P11} \\
+C4 Znajomość & 2 & Użytkownicy słabo rozumieją przewagę klucza nad innymi metodami. & \cite{P3,P1} \\
+D1 NIST AAL & AAL3 (5) & AAL3 przy certyfikowanym sprzęcie. & \cite{N1} \\
+D2 PSD2 SCA & tak (bez powiązania z kwotą) (4) & Posiadanie + wiedza; powiązanie z transakcją wymaga dodatkowego rozszerzenia. & \cite{N3,S1} \\
+D3 Odporność na phishing & tak (5) & Odporny na phishing. & \cite{N1,P6} \\
+D4 Dopasowanie B2B/B2C/C2C & B2B (4) & Przede wszystkim B2B i konta uprzywilejowane. & \cite{P3,R2} \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\subsection*{6. Passkey}
+\begingroup\small
+\begin{longtable}{@{}p{0.2\linewidth}c p{0.56\linewidth}l@{}}
+\toprule
+Kryterium & Ocena & Uzasadnienie & Źródła \\
+\midrule
+\endhead
+A1 Phishing / AitM & 5 & Podpis związany z domeną; fałszywa strona nie dostanie ważnego podpisu. & \cite{S1,P6,A1} \\
+A2 Przechwycenie kanału & 5 & Podpis jednorazowy; synchronizacja kluczy szyfrowana end-to-end. & \cite{S1,P5} \\
+A3 Powtórzenie & 5 & Wyzwanie serwera wyklucza powtórzenie. & \cite{S1} \\
+A4 SIM-swap & 4 & Odzyskanie konta chmurowego bywa oparte na SMS. & \cite{P5,P11} \\
+A5 Socjotechnika & 4 & Brak kodu do podyktowania; ryzyko przy odzyskiwaniu konta. & \cite{P4,P11} \\
+A6 Wyciek z serwera & 5 & Serwer przechowuje tylko klucze publiczne. & \cite{S1,P6} \\
+A7 Utrata urządzenia & 4 & Użycie wymaga odblokowania urządzenia. & \cite{S1,P5} \\
+B1 Koszt & 4 & Wbudowane w systemy; koszt to praca wdrożeniowa. & \cite{P4,R2} \\
+B2 Interoperacyjność & 4 & Wspierane przez główne platformy, choć ekosystemy synchronizacji są rozłączne. & \cite{P4,P5,W4} \\
+B3 Skalowalność & 5 & Brak sprzętu do dystrybucji. & \cite{R2,P4} \\
+C1 Tarcie & 5 & Jeden gest: palec, twarz albo PIN urządzenia. & \cite{P4,P1} \\
+C2 Czas & 5 & Najkrótsze logowanie spośród badanych metod. & \cite{P4,R2} \\
+C3 Dostępność i odzyskiwanie & 4 & Synchronizacja ułatwia odzyskanie; wersja związana z urządzeniem trudniejsza. & \cite{P5} \\
+C4 Znajomość & 3 & Znajomość rośnie (57\% w 2024 r.), ale nadal ograniczona. & \cite{R1,R2} \\
+D1 NIST AAL & AAL2/AAL3 (4) & AAL2 (synchronizowany), AAL3 (związany z urządzeniem). & \cite{N1} \\
+D2 PSD2 SCA & tak (bez powiązania z kwotą) (4) & Posiadanie + cecha lub wiedza; powiązanie z kwotą wymaga dodatkowego rozszerzenia. & \cite{N3,S1} \\
+D3 Odporność na phishing & tak (5) & Odporny na phishing. & \cite{N1,P6} \\
+D4 Dopasowanie B2B/B2C/C2C & B2C, B2B (5) & B2C (synchronizowane) i B2B (związane z urządzeniem). & \cite{R2,P5} \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\subsection*{7. Biometria}
+\begingroup\small
+\begin{longtable}{@{}p{0.2\linewidth}c p{0.56\linewidth}l@{}}
+\toprule
+Kryterium & Ocena & Uzasadnienie & Źródła \\
+\midrule
+\endhead
+A1 Phishing / AitM & 4 & Brak sekretu do wpisania; odporność zależy od odblokowywanego uwierzytelniacza. & \cite{S1,N1} \\
+A2 Przechwycenie kanału & 5 & Wzorzec nie opuszcza urządzenia. & \cite{N1,P13} \\
+A3 Powtórzenie & 3 & Słabe czujniki można oszukać nagraną próbką; pomaga challenge-response. & \cite{P16,P13} \\
+A4 SIM-swap & 5 & Niezależna od telefonu jako numeru. & \cite{N1} \\
+A5 Socjotechnika & 4 & Trudno ją „podyktować”; możliwe wymuszenie fizyczne. & \cite{P13} \\
+A6 Wyciek z serwera & 5 & Wzorzec przechowywany lokalnie, nie na serwerze. & \cite{N1,S1} \\
+A7 Utrata urządzenia & 4 & Test żywotności i limit prób, potem PIN. & \cite{P14,N6} \\
+B1 Koszt & 4 & Czytniki wbudowane w telefony i laptopy. & \cite{P15} \\
+B2 Interoperacyjność & 3 & Zależy od urządzenia i czujnika. & \cite{P13,P2} \\
+B3 Skalowalność & 4 & Skaluje się z urządzeniami użytkowników. & \cite{P15} \\
+C1 Tarcie & 5 & Jeden gest. & \cite{P15,P2} \\
+C2 Czas & 5 & Ułamek sekundy. & \cite{P15} \\
+C3 Dostępność i odzyskiwanie & 3 & Nie dla każdego (np. starte linie papilarne); potrzebny PIN zapasowy. & \cite{P15,P13} \\
+C4 Znajomość & 5 & Powszechna w telefonach. & \cite{P15} \\
+D1 NIST AAL & n/d samodzielnie (2) & Według NIST tylko w połączeniu z fizycznym uwierzytelniaczem. & \cite{N1} \\
+D2 PSD2 SCA & częściowo (3) & Element „cecha”; potrzebny drugi element. & \cite{N3} \\
+D3 Odporność na phishing & częściowo (3) & Zależy od uwierzytelniacza, który odblokowuje. & \cite{N1} \\
+D4 Dopasowanie B2B/B2C/C2C & B2C (4) & B2C jako odblokowanie passkeya i aplikacji. & \cite{P15,R2} \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\subsection*{8. Karta płatnicza}
+\begingroup\small
+\begin{longtable}{@{}p{0.2\linewidth}c p{0.56\linewidth}l@{}}
+\toprule
+Kryterium & Ocena & Uzasadnienie & Źródła \\
+\midrule
+\endhead
+A1 Phishing / AitM & 3 & Chipu nie da się sphishować przy kasie, ale dane karty wyłudza się do płatności online. & \cite{A6,S5} \\
+A2 Przechwycenie kanału & 3 & Kryptogram EMV jest bezwartościowy dla podsłuchującego; pasek — nie. & \cite{A9,A8} \\
+A3 Powtórzenie & 3 & Chip: licznik i liczba losowa; pasek: dane statyczne. & \cite{A6,A8} \\
+A4 SIM-swap & 5 & Niezależna od telefonu. & \cite{S5} \\
+A5 Socjotechnika & 3 & Ofiarę namawia się do przyłożenia karty do telefonu i podania PIN-u. & \cite{X6} \\
+A6 Wyciek z serwera & 3 & Klucze w HSM banku; wycieki u sprzedawców ujawniają numery do płatności online. & \cite{A6} \\
+A7 Utrata urządzenia & 2 & Płatności zbliżeniowe bez PIN-u do limitu; obejścia PIN w niektórych konfiguracjach. & \cite{A4,A6} \\
+B1 Koszt & 2 & Karty, terminale, sieć płatnicza, HSM. & \cite{S5,A6} \\
+B2 Interoperacyjność & 5 & Globalna akceptacja EMV. & \cite{S5} \\
+B3 Skalowalność & 4 & Dojrzała infrastruktura, ale wymiana kart kosztuje. & \cite{S5} \\
+C1 Tarcie & 5 & Przyłożenie karty. & \cite{S5} \\
+C2 Czas & 5 & Około sekundy. & \cite{S5} \\
+C3 Dostępność i odzyskiwanie & 4 & Bank wydaje nową kartę. & \cite{S5} \\
+C4 Znajomość & 5 & Powszechnie znana. & \cite{S5} \\
+D1 NIST AAL & n/d (3) & Nie dotyczy (płatności, nie logowanie). & \cite{N1} \\
+D2 PSD2 SCA & częściowo (3) & Z PIN-em spełnia SCA; drobne płatności zbliżeniowe są zwolnione. & \cite{N3} \\
+D3 Odporność na phishing & częściowo (3) & Chip odporny na powtórzenie, pasek i przekaźnik nie. & \cite{A5,A6} \\
+D4 Dopasowanie B2B/B2C/C2C & B2C (4) & B2C w handlu. & \cite{S5,N7} \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\subsection*{9. MFA i ocena ryzyka}
+\begingroup\small
+\begin{longtable}{@{}p{0.2\linewidth}c p{0.56\linewidth}l@{}}
+\toprule
+Kryterium & Ocena & Uzasadnienie & Źródła \\
+\midrule
+\endhead
+A1 Phishing / AitM & 3 & Zależy od składników: z passkeyem odporne, z hasłem i kodem nie. & \cite{A1,N4} \\
+A2 Przechwycenie kanału & 4 & Kilka niezależnych kanałów utrudnia przechwycenie. & \cite{N4,P10} \\
+A3 Powtórzenie & 4 & Składniki dynamiczne wykluczają powtórzenie. & \cite{N4} \\
+A4 SIM-swap & 3 & Słabe, jeśli SMS jest jednym ze składników lub ścieżką zapasową. & \cite{P11,X2} \\
+A5 Socjotechnika & 3 & Wymaga oszukania na więcej niż jednym etapie; zmęczenie użytkownika zostaje. & \cite{A2,P9} \\
+A6 Wyciek z serwera & 4 & Wyciek jednego składnika nie wystarcza. & \cite{N4} \\
+A7 Utrata urządzenia & 4 & Utrata jednego urządzenia nie daje dostępu. & \cite{N4} \\
+B1 Koszt & 3 & Koszt sumy składników i systemu oceny ryzyka. & \cite{P10,P7} \\
+B2 Interoperacyjność & 3 & Zależy od wybranych składników. & \cite{P12} \\
+B3 Skalowalność & 4 & Dobrze skaluje się z oceną ryzyka (więcej kroków tylko przy ryzyku). & \cite{P10} \\
+C1 Tarcie & 2 & Kilka kroków przy logowaniu. & \cite{P9,P8} \\
+C2 Czas & 2 & Najdłużej spośród badanych. & \cite{P8} \\
+C3 Dostępność i odzyskiwanie & 2 & Odzyskiwanie bywa skomplikowane i osłabia całość. & \cite{P11} \\
+C4 Znajomość & 3 & Znane, ale obowiązkowe MFA bez edukacji bywa nieskuteczne. & \cite{P9} \\
+D1 NIST AAL & AAL2–AAL3 (4) & AAL2–AAL3 zależnie od składników. & \cite{N1} \\
+D2 PSD2 SCA & tak (5) & To definicja SCA. & \cite{N3} \\
+D3 Odporność na phishing & częściowo (3) & Tylko gdy składnik jest odporny na phishing. & \cite{N1,A1} \\
+D4 Dopasowanie B2B/B2C/C2C & B2B, B2C (5) & B2B i B2C przy wysokiej stawce. & \cite{N4,N7} \\
+\bottomrule
+\end{longtable}
+\endgroup
+
+\subsection*{10. BLIK}
+\begingroup\small
+\begin{longtable}{@{}p{0.2\linewidth}c p{0.56\linewidth}l@{}}
+\toprule
+Kryterium & Ocena & Uzasadnienie & Źródła \\
+\midrule
+\endhead
+A1 Phishing / AitM & 3 & Kod wyłudzany na fałszywych stronach płatności, ale potwierdzenie pokazuje kwotę i odbiorcę. & \cite{X7,N3} \\
+A2 Przechwycenie kanału & 4 & Kod bez potwierdzenia w aplikacji jest bezużyteczny. & \cite{X7} \\
+A3 Powtórzenie & 5 & Kod jednorazowy, 2 minuty, potwierdzenie każdej transakcji. & \cite{X7} \\
+A4 SIM-swap & 4 & Aktywacja aplikacji na nowym telefonie wymaga logowania do banku. & \cite{X7,X2} \\
+A5 Socjotechnika & 2 & Główny wektor oszustw: „pożycz na BLIKa”, fałszywe „odbieranie płatności”. & \cite{X7,P9} \\
+A6 Wyciek z serwera & 5 & Kody ulotne; bank przechowuje klucz publiczny aplikacji. & \cite{X7} \\
+A7 Utrata urządzenia & 4 & Aplikacja chroniona PIN-em lub biometrią. & \cite{X7} \\
+B1 Koszt & 3 & Tanio dla sprzedawców; banki potrzebują integracji z systemem BLIK. & \cite{X7} \\
+B2 Interoperacyjność & 2 & Głównie Polska. & \cite{X7} \\
+B3 Skalowalność & 4 & Działa w skali krajowej. & \cite{X7} \\
+C1 Tarcie & 4 & Kod i jedno potwierdzenie. & \cite{X7} \\
+C2 Czas & 4 & Kilka sekund. & \cite{X7} \\
+C3 Dostępność i odzyskiwanie & 3 & Wymaga smartfona i aplikacji polskiego banku. & \cite{X7} \\
+C4 Znajomość & 5 & Powszechny w Polsce. & \cite{X7} \\
+D1 NIST AAL & n/d (3) & Nie dotyczy (płatności). & \cite{N1} \\
+D2 PSD2 SCA & tak (5) & Spełnia SCA z dynamicznym powiązaniem. & \cite{N3,X7} \\
+D3 Odporność na phishing & częściowo (3) & Potwierdzenie z kwotą pomaga, ale zależy od uwagi użytkownika. & \cite{X7} \\
+D4 Dopasowanie B2B/B2C/C2C & C2C, B2C (PL) (4) & C2C i B2C w Polsce. & \cite{X7} \\
+\bottomrule
+\end{longtable}
+\endgroup

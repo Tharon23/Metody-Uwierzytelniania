@@ -1,0 +1,39 @@
+% KM2 — analiza porównawcza i matryca zagrożeń (wersja PDF dla prowadzącego).
+% Kompilacja: latexmk -lualatex -outdir=output km2.tex (po npm --prefix 04_app run gen:report)
+\documentclass[11pt,a4paper]{article}
+\usepackage{fontspec}
+\usepackage[polish]{babel}
+\usepackage[a4paper,margin=2.2cm,includefoot]{geometry}
+\usepackage{booktabs,longtable,array,multirow}
+\usepackage{xcolor}
+\usepackage{pdflscape}
+\usepackage{caption}
+\usepackage{csquotes}
+\usepackage[backend=biber,style=numeric-comp,sorting=none]{biblatex}
+\usepackage[hidelinks]{hyperref}
+\addbibresource{zrodla.bib}
+\directlua{luaotfload.add_fallback("fb", {"DejaVuSans:mode=node;", "Segoe UI Symbol:mode=node;"})}
+\setmainfont{TeX Gyre Pagella}[RawFeature={fallback=fb}]
+\setmonofont{DejaVu Sans Mono}[Scale=0.82,RawFeature={fallback=fb}]
+\captionsetup{font=small,labelfont=bf}
+\definecolor{s1}{HTML}{E3EDF6}\definecolor{s2}{HTML}{BCD3E8}\definecolor{s3}{HTML}{86AFD3}\definecolor{s4}{HTML}{4F86B8}\definecolor{s5}{HTML}{1F5A92}
+\setlength{\fboxsep}{1.6pt}
+\newcommand{\heat}[3]{\colorbox{#1}{\makebox[1.15em]{\textcolor{#2}{#3}}}}
+\newcommand{\sca}[1]{\heat{s1}{black}{#1}}\newcommand{\scb}[1]{\heat{s2}{black}{#1}}\newcommand{\scc}[1]{\heat{s3}{black}{#1}}
+\newcommand{\scd}[1]{\heat{s4}{white}{#1}}\newcommand{\sce}[1]{\heat{s5}{white}{\textbf{#1}}}
+\title{\textbf{KM2: analiza porównawcza i matryca zagrożeń}\\large Analiza porównawcza mechanizmów uwierzytelniania}
+\author{Zespół projektu · Bezpieczne Transakcje Elektroniczne, AGH}
+\date{Kraków, 2026}
+\begin{document}
+\maketitle
+\noindent Dokument zawiera matrycę porównawczą dziesięciu mechanizmów uwierzytelniania w osiemnastu kryteriach z bazy KM1 (§8.2), ranking ważony dla relacji B2B, B2C i C2C, rekomendacje zastosowań oraz uzasadnienie każdej oceny ze źródłem. Skala 1--5, gdzie 5 oznacza wariant najkorzystniejszy. Wagi profili (bezpieczeństwo/wdrażalność/UX/zgodność): B2B 45/20/10/25, B2C 35/15/35/15, C2C 25/25/40/10. Tabele generowane są z tych samych danych co aplikacja i raport końcowy.
+\begin{landscape}
+\input{generated/matryca}
+\end{landscape}
+\input{generated/ranking}
+\section*{Najefektywniejsze zastosowanie}
+\input{generated/zastosowanie}
+\section*{Uzasadnienia ocen}
+\input{generated/uzasadnienia}
+\printbibliography[title={Źródła}]
+\end{document}
